@@ -22,6 +22,7 @@ apiClient.interceptors.request.use(config => {
 });
 
 // Product API endpoints
+// Product API endpoints - corrected implementation
 export const productService = {
   // Get all products
   getAllProducts() {
@@ -33,9 +34,9 @@ export const productService = {
     return apiClient.get(`/api/product/id/${productId}`);
   },
   
-  // Get product by barcode
+  // Get product by barcode - CORRECTED ENDPOINT
   getProductByBarcode(barcode) {
-    return apiClient.get(`/api/product/${barcode}`);
+    return apiClient.get(`/api/product/barcode/${barcode}`);
   },
   
   // Create new product

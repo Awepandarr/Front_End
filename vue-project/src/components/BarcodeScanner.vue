@@ -139,7 +139,7 @@ export default {
       checkScannerConnection();
       
       // Schedule periodic connection checks
-      setInterval(checkScannerConnection, 5000);
+      const connectionInterval = setInterval(checkScannerConnection, 5000);
       
       // Load recent scans from localStorage if available
       const savedScans = localStorage.getItem('recentScans');
@@ -153,10 +153,12 @@ export default {
 
       // Listen for keyboard events to simulate barcode scanner input
       document.addEventListener('keydown', handleKeyDown);
-    });
-
-    onUnmounted(() => {
-      document.removeEventListener('keydown', handleKeyDown);
+      
+      // Clean up on unmount
+      onUnmounted(() => {
+        clearInterval(connectionInterval);
+        document.removeEventListener('keydown', handleKeyDown);
+      });
     });
 
     const handleKeyDown = (e) => {
