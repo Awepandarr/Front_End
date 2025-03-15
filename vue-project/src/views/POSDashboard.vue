@@ -2,18 +2,18 @@
 <template>
   <div class="bg-gray-100 min-h-screen">
     <div class="container mx-auto px-6 py-8">
-      <div class="flex flex-col md:flex-row gap-6">
+      <div class="flex flex-col md:flex-row gap-8">
         <!-- Left Panel: Product Categories and List -->
-        <div class="w-full md:w-2/3 bg-white rounded-lg shadow-md overflow-hidden">
+        <div class="w-full md:w-2/3 bg-white rounded-lg shadow-lg overflow-hidden">
           <!-- Category Tabs -->
-          <div class="flex overflow-x-auto bg-gray-100 border-b">
+          <div class="flex overflow-x-auto bg-blue-500">
             <button 
               v-for="category in categories" 
               :key="category.id"
               @click="activeCategory = category.id"
               :class="[
-                'px-4 py-3 text-sm font-medium whitespace-nowrap',
-                activeCategory === category.id ? 'bg-white border-b-2 border-blue-500' : 'hover:bg-gray-200'
+                'px-6 py-4 text-lg font-medium whitespace-nowrap focus:outline-none',
+                activeCategory === category.id ? 'bg-blue-600 text-white' : 'text-blue-100 hover:bg-blue-400 hover:text-white'
               ]"
             >
               {{ category.name }}
@@ -21,81 +21,81 @@
           </div>
 
           <!-- Product Grid -->
-          <div class="p-4">
-            <div class="mb-4">
+          <div class="p-8">
+            <div class="mb-6">
               <input 
                 type="text" 
                 v-model="searchQuery" 
                 placeholder="Search products..." 
-                class="w-full p-2 border rounded-md"
+                class="w-full px-4 py-3 text-lg border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
               >
             </div>
-            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
               <div 
                 v-for="product in filteredProducts" 
                 :key="product.productId"
                 @click="addToCart(product)"
-                class="border rounded-lg p-3 cursor-pointer hover:shadow-md transition"
+                class="bg-white rounded-lg shadow-md p-6 cursor-pointer transition-transform duration-300 ease-in-out transform hover:-translate-y-1 hover:shadow-lg"
               >
-                <div class="h-24 bg-gray-200 rounded-md mb-2 flex items-center justify-center text-gray-400">
-                  <span>Product Image</span>
+                <div class="bg-gray-200 rounded-lg mb-4 p-4 flex items-center justify-center">
+                  <span class="text-4xl text-gray-400">Product Image</span>
                 </div>
-                <h4 class="font-semibold text-sm truncate">{{ product.name }}</h4>
-                <p class="text-blue-600 font-bold text-sm">${{ product.price.toFixed(2) }}</p>
-                <p class="text-xs text-gray-500">Stock: {{ product.stockQuantity }}</p>
+                <h4 class="text-xl font-semibold mb-2 truncate">{{ product.name }}</h4>
+                <p class="text-blue-500 text-2xl font-bold mb-2">${{ product.price.toFixed(2) }}</p>
+                <p class="text-lg text-gray-500">Stock: {{ product.stockQuantity }}</p>
               </div>
             </div>
           </div>
         </div>
 
         <!-- Right Panel: Current Order and Actions -->
-        <div class="w-full md:w-1/3 flex flex-col gap-4">
+        <div class="w-full md:w-1/3 bg-white rounded-lg shadow-lg p-8">
           <!-- Current Order -->
-          <div class="bg-white rounded-lg shadow-md p-4">
-            <div class="flex justify-between items-center mb-4">
-              <h3 class="text-lg font-bold">Current Order</h3>
+          <div class="mb-8">
+            <div class="flex justify-between items-center mb-6">
+              <h3 class="text-2xl font-bold">Current Order</h3>
               <button 
                 @click="clearCart" 
-                class="text-red-500 text-sm"
+                class="text-red-500 hover:text-red-600 text-lg focus:outline-none"
                 :disabled="cart.length === 0"
               >
                 Clear All
               </button>
             </div>
 
-            <div class="max-h-80 overflow-y-auto mb-4">
-              <div v-if="cart.length === 0" class="text-center py-8 text-gray-500">
+            <div class="max-h-96 overflow-y-auto mb-6">
+              <div v-if="cart.length === 0" class="text-center py-12 text-xl text-gray-500">
                 No items in cart
               </div>
               <div v-else>
                 <div 
                   v-for="(item, index) in cart" 
                   :key="index"
-                  class="flex justify-between items-center py-2 border-b"
+                  class="flex justify-between items-center py-4 border-b-2 border-gray-200"
                 >
                   <div>
-                    <p class="font-medium">{{ item.name }}</p>
-                    <div class="flex items-center mt-1">
+                    <p class="text-xl font-medium">{{ item.name }}</p>
+                    <div class="flex items-center mt-2">
                       <button 
                         @click="decrementQuantity(index)" 
-                        class="bg-gray-200 px-2 rounded-l"
+                        class="bg-gray-200 hover:bg-gray-300 px-3 py-1 rounded-l-lg text-xl focus:outline-none"
                       >
                         -
                       </button>
-                      <span class="px-2 bg-gray-100">{{ item.quantity }}</span>
+                      <span class="px-4 py-1 text-xl bg-gray-100">{{ item.quantity }}</span>
                       <button 
                         @click="incrementQuantity(index)" 
-                        class="bg-gray-200 px-2 rounded-r"
+                        class="bg-gray-200 hover:bg-gray-300 px-3 py-1 rounded-r-lg text-xl focus:outline-none"
                       >
                         +
                       </button>
                     </div>
                   </div>
                   <div class="text-right">
-                    <p class="font-semibold">${{ (item.price * item.quantity).toFixed(2) }}</p>
+                    <p class="text-xl font-semibold">${{ (item.price * item.quantity).toFixed(2) }}</p>
                     <button 
                       @click="removeFromCart(index)" 
-                      class="text-xs text-red-500"
+                      class="text-red-500 hover:text-red-600 text-lg mt-2 focus:outline-none"
                     >
                       Remove
                     </button>
@@ -105,20 +105,20 @@
             </div>
 
             <!-- Order Summary -->
-            <div class="border-t pt-2">
-              <div class="flex justify-between mb-1">
+            <div class="border-t-4 border-gray-200 pt-4">
+              <div class="flex justify-between mb-2 text-xl">
                 <span>Subtotal</span>
                 <span>${{ subtotal.toFixed(2) }}</span>
               </div>
-              <div class="flex justify-between mb-1">
+              <div class="flex justify-between mb-2 text-xl">
                 <span>Tax (10%)</span>
                 <span>${{ tax.toFixed(2) }}</span>
               </div>
-              <div class="flex justify-between mb-1">
+              <div class="flex justify-between mb-2 text-xl">
                 <span>Discount</span>
                 <span>${{ discount.toFixed(2) }}</span>
               </div>
-              <div class="flex justify-between font-bold text-lg mt-2 pt-2 border-t">
+              <div class="flex justify-between text-3xl font-bold mt-4 pt-4 border-t-4 border-gray-200">
                 <span>Total</span>
                 <span>${{ total.toFixed(2) }}</span>
               </div>
@@ -126,19 +126,19 @@
           </div>
 
           <!-- Payment Actions -->
-          <div class="bg-white rounded-lg shadow-md p-4">
-            <h3 class="text-lg font-bold mb-3">Payment Options</h3>
-            <div class="grid grid-cols-2 gap-2 mb-4">
+          <div>
+            <h3 class="text-2xl font-bold mb-4">Payment Options</h3>
+            <div class="grid grid-cols-2 gap-4 mb-6">
               <button 
                 @click="processPayment('CASH')" 
-                class="bg-green-500 text-white py-3 rounded-md hover:bg-green-600"
+                class="bg-green-500 hover:bg-green-600 text-white text-xl font-semibold py-4 rounded-lg focus:outline-none"
                 :disabled="cart.length === 0"
               >
                 Cash
               </button>
               <button 
                 @click="processPayment('CARD')" 
-                class="bg-blue-500 text-white py-3 rounded-md hover:bg-blue-600"
+                class="bg-blue-500 hover:bg-blue-600 text-white text-xl font-semibold py-4 rounded-lg focus:outline-none"
                 :disabled="cart.length === 0"
               >
                 Card
@@ -146,14 +146,14 @@
             </div>
             <button 
               @click="holdOrder" 
-              class="w-full bg-yellow-500 text-white py-2 rounded-md hover:bg-yellow-600 mb-2"
+              class="w-full bg-yellow-500 hover:bg-yellow-600 text-white text-xl font-semibold py-4 rounded-lg mb-4 focus:outline-none"
               :disabled="cart.length === 0"
             >
               Hold Order
             </button>
             <button 
               @click="cancelOrder" 
-              class="w-full bg-red-500 text-white py-2 rounded-md hover:bg-red-600"
+              class="w-full bg-red-500 hover:bg-red-600 text-white text-xl font-semibold py-4 rounded-lg focus:outline-none"
               :disabled="cart.length === 0"
             >
               Cancel Order
@@ -164,7 +164,6 @@
     </div>
   </div>
 </template>
-
 <script>
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
