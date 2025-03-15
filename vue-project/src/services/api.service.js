@@ -7,7 +7,18 @@ const apiClient = axios.create({
   baseURL: 'http://localhost:8080',
   headers: {
     'Content-Type': 'application/json'
+  },
+  // Add timeout to handle network issues
+  timeout: 10000
+});
+
+// Request interceptor to log requests in development
+apiClient.interceptors.request.use(config => {
+  if (process.env.NODE_ENV === 'development') {
+    console.log(`API Request: ${config.method.toUpperCase()} ${config.url}`, 
+      config.data ? config.data : '');
   }
+  return config;
 });
 
 // Product API endpoints
@@ -70,7 +81,27 @@ export const orderService = {
 export const paymentService = {
   // Process payment
   processPayment(paymentData) {
-    return apiClient.post('/api/payment', paymentData);
+    // Ensure we have all required fields
+    const requiredFields = ['orderId', 'amount', 'paymentMethod', 'transactionId'];
+    for (const field of requiredFields) {
+      if (!paymentData[field]) {
+        return Promise.reject(new Error(`Missing required field: ${field}`));
+      }
+    }
+    
+    // Standardize payment type field to match backend expectation
+    const standardizedData = {
+      ...paymentData,
+      // Convert payment method to enum format if needed
+      paymentType: paymentData.paymentMethod === 'CARD' ? 'CARD' : 'CASH'
+    };
+    
+    // Log the data being sent in development
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Sending payment data:', standardizedData);
+    }
+    
+    return apiClient.post('/api/payment', standardizedData);
   },
   
   // Get payment by transaction ID
@@ -111,6 +142,11 @@ export const customerService = {
 export const transactionService = {
   // Create new transaction
   createTransaction(transactionData) {
+    // Validate the basic transaction data
+    if (!transactionData.orderId || !transactionData.totalAmount) {
+      return Promise.reject(new Error('Missing required transaction fields'));
+    }
+    
     return apiClient.post('/api/transaction', transactionData);
   },
   
@@ -155,7 +191,37 @@ export const reportService = {
 apiClient.interceptors.response.use(
   response => response,
   error => {
-    console.error('API Error:', error.response);
+    // Log detailed error information
+    if (process.env.NODE_ENV === 'development') {
+      console.error('API Error:', error.config?.url);
+      if (error.response) {
+        console.error('Status:', error.response.status);
+        console.error('Data:', error.response.data);
+      } else if (error.request) {
+        console.error('No response received:', error.request);
+      } else {
+        console.error('Error setting up request:', error.message);
+      }
+    }
+    
+    // Customize the error message based on status code
+    if (error.response) {
+      const status = error.response.status;
+      if (status === 404) {
+        error.message = 'The requested resource was not found.';
+      } else if (status === 401) {
+        error.message = 'Unauthorized access. Please log in again.';
+      } else if (status === 400) {
+        error.message = `Bad request: ${error.response.data || 'Please check your input.'}`;
+      } else if (status >= 500) {
+        error.message = 'Server error. Please try again later.';
+      }
+    } else if (error.code === 'ECONNABORTED') {
+      error.message = 'Request timed out. Please check your connection.';
+    } else if (!error.response) {
+      error.message = 'Network error. Please check your connection.';
+    }
+    
     return Promise.reject(error);
   }
 );

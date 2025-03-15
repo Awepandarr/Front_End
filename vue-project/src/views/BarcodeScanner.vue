@@ -53,6 +53,30 @@
       ></div>
     </div>
 
+    <!-- Video Feed (optional, if you want to display the actual video feed) -->
+    <div v-if="showVideoFeed" class="mt-4">
+      <div class="relative">
+        <img :src="videoFeedUrl" class="w-full rounded-md" alt="Scanner Video Feed" />
+        <div class="absolute inset-0 flex items-center justify-center">
+          <div class="border-2 border-blue-500 w-64 h-32 opacity-50"></div>
+        </div>
+      </div>
+      <button 
+        @click="showVideoFeed = false" 
+        class="mt-2 text-sm text-blue-600 hover:underline"
+      >
+        Hide Video Feed
+      </button>
+    </div>
+    <div v-else class="mt-2">
+      <button 
+        @click="showVideoFeed = true" 
+        class="text-sm text-blue-600 hover:underline"
+      >
+        Show Video Feed
+      </button>
+    </div>
+
     <!-- Recent Scans -->
     <div v-if="recentScans.length > 0" class="mt-4">
       <h4 class="font-medium text-sm text-gray-500 mb-2">Recent Scans</h4>
@@ -105,7 +129,7 @@
 </template>
 
 <script>
-import { ref, onMounted, nextTick } from 'vue';
+import { ref, onMounted, nextTick, onUnmounted } from 'vue';
 import { productService } from '../services/api.service';
 
 export default {
@@ -120,6 +144,42 @@ export default {
     const error = ref('');
     const foundProduct = ref(null);
     const recentScans = ref([]);
+    const showVideoFeed = ref(false);
+    const videoFeedUrl = ref('http://localhost:5001/video_feed');
+    const pollingInterval = ref(null);
+    const flaskApiUrl = ref('http://localhost:5001');
+
+    // Check scanner connection
+    const checkScannerConnection = async () => {
+      try {
+        const response = await fetch(`${flaskApiUrl.value}/health`);
+        scannerStatus.value = response.ok;
+      } catch (err) {
+        console.error('Error checking scanner connection:', err);
+        scannerStatus.value = false;
+      }
+    };
+
+    // Poll for latest barcode
+    const startPollingForBarcode = () => {
+      pollingInterval.value = setInterval(async () => {
+        if (scannerStatus.value) {
+          try {
+            const response = await fetch(`${flaskApiUrl.value}/latest_barcode`);
+            if (response.ok) {
+              const data = await response.json();
+              if (data && data.data && data.data !== barcodeValue.value) {
+                console.log('Barcode detected:', data.data);
+                barcodeValue.value = data.data;
+                await searchProduct();
+              }
+            }
+          } catch (err) {
+            console.error('Error polling for barcode:', err);
+          }
+        }
+      }, 1000); // Poll every second
+    };
 
     onMounted(() => {
       // Focus the input on component mount
@@ -127,17 +187,28 @@ export default {
         barcodeInput.value.focus();
       });
       
-      // Simulate scanner connection status changes
-      setInterval(() => {
-        if (Math.random() > 0.95) {
-          scannerStatus.value = !scannerStatus.value;
-        }
-      }, 10000);
+      // Check connection and start polling
+      checkScannerConnection();
+      startPollingForBarcode();
+      
+      // Schedule periodic connection checks
+      setInterval(checkScannerConnection, 5000);
       
       // Load recent scans from localStorage if available
       const savedScans = localStorage.getItem('recentScans');
       if (savedScans) {
-        recentScans.value = JSON.parse(savedScans);
+        try {
+          recentScans.value = JSON.parse(savedScans);
+        } catch (err) {
+          console.error('Error parsing recent scans:', err);
+        }
+      }
+    });
+
+    // Clean up on component unmount
+    onUnmounted(() => {
+      if (pollingInterval.value) {
+        clearInterval(pollingInterval.value);
       }
     });
 
@@ -195,7 +266,11 @@ export default {
       ].slice(0, 5);
       
       // Save to localStorage
-      localStorage.setItem('recentScans', JSON.stringify(recentScans.value));
+      try {
+        localStorage.setItem('recentScans', JSON.stringify(recentScans.value));
+      } catch (err) {
+        console.error('Error saving recent scans:', err);
+      }
     };
 
     const clearInput = () => {
@@ -221,6 +296,8 @@ export default {
       error,
       foundProduct,
       recentScans,
+      showVideoFeed,
+      videoFeedUrl,
       searchProduct,
       clearInput,
       addToCart
