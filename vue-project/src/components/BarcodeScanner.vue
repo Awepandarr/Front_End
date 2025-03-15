@@ -1,3 +1,4 @@
+<!-- src/components/BarcodeScanner.vue -->
 <template>
   <div class="bg-white shadow-md rounded-lg p-4">
     <div class="flex justify-between items-center mb-4">
@@ -20,6 +21,7 @@
         @keyup.enter="searchProduct"
         @focus="inputFocused = true"
         @blur="inputFocused = false"
+        autofocus
       >
       <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -43,7 +45,7 @@
       </button>
     </div>
 
-    <!-- Scanner Animation (shows when input is focused) -->
+    <!-- Scanner Animation -->
     <div 
       v-if="inputFocused" 
       class="mt-4 h-8 bg-gray-200 rounded-md overflow-hidden relative"
@@ -51,30 +53,6 @@
       <div 
         class="h-full bg-red-500 w-1 absolute animate-scanner"
       ></div>
-    </div>
-
-    <!-- Video Feed (optional, if you want to display the actual video feed) -->
-    <div v-if="showVideoFeed" class="mt-4">
-      <div class="relative">
-        <img :src="videoFeedUrl" class="w-full rounded-md" alt="Scanner Video Feed" />
-        <div class="absolute inset-0 flex items-center justify-center">
-          <div class="border-2 border-blue-500 w-64 h-32 opacity-50"></div>
-        </div>
-      </div>
-      <button 
-        @click="showVideoFeed = false" 
-        class="mt-2 text-sm text-blue-600 hover:underline"
-      >
-        Hide Video Feed
-      </button>
-    </div>
-    <div v-else class="mt-2">
-      <button 
-        @click="showVideoFeed = true" 
-        class="text-sm text-blue-600 hover:underline"
-      >
-        Show Video Feed
-      </button>
     </div>
 
     <!-- Recent Scans -->
@@ -144,41 +122,11 @@ export default {
     const error = ref('');
     const foundProduct = ref(null);
     const recentScans = ref([]);
-    const showVideoFeed = ref(false);
-    const videoFeedUrl = ref('http://localhost:5001/video_feed');
-    const pollingInterval = ref(null);
-    const flaskApiUrl = ref('http://localhost:5001');
 
-    // Check scanner connection
-    const checkScannerConnection = async () => {
-      try {
-        const response = await fetch(`${flaskApiUrl.value}/health`);
-        scannerStatus.value = response.ok;
-      } catch (err) {
-        console.error('Error checking scanner connection:', err);
-        scannerStatus.value = false;
-      }
-    };
-
-    // Poll for latest barcode
-    const startPollingForBarcode = () => {
-      pollingInterval.value = setInterval(async () => {
-        if (scannerStatus.value) {
-          try {
-            const response = await fetch(`${flaskApiUrl.value}/latest_barcode`);
-            if (response.ok) {
-              const data = await response.json();
-              if (data && data.data && data.data !== barcodeValue.value) {
-                console.log('Barcode detected:', data.data);
-                barcodeValue.value = data.data;
-                await searchProduct();
-              }
-            }
-          } catch (err) {
-            console.error('Error polling for barcode:', err);
-          }
-        }
-      }, 1000); // Poll every second
+    // Simulated scanner connectivity check
+    const checkScannerConnection = () => {
+      // In a real implementation, this would check actual hardware connectivity
+      scannerStatus.value = Math.random() > 0.1; // 90% chance it's connected for demo
     };
 
     onMounted(() => {
@@ -187,9 +135,8 @@ export default {
         barcodeInput.value.focus();
       });
       
-      // Check connection and start polling
+      // Check scanner connection
       checkScannerConnection();
-      startPollingForBarcode();
       
       // Schedule periodic connection checks
       setInterval(checkScannerConnection, 5000);
@@ -203,14 +150,28 @@ export default {
           console.error('Error parsing recent scans:', err);
         }
       }
+
+      // Listen for keyboard events to simulate barcode scanner input
+      document.addEventListener('keydown', handleKeyDown);
     });
 
-    // Clean up on component unmount
     onUnmounted(() => {
-      if (pollingInterval.value) {
-        clearInterval(pollingInterval.value);
-      }
+      document.removeEventListener('keydown', handleKeyDown);
     });
+
+    const handleKeyDown = (e) => {
+      // Only process if not in an input field (except our barcode input)
+      const activeElement = document.activeElement;
+      if (activeElement !== barcodeInput.value && 
+          activeElement.tagName.toLowerCase() === 'input') {
+        return;
+      }
+
+      // Focus barcode input when any key is pressed and input is not already focused
+      if (activeElement !== barcodeInput.value) {
+        barcodeInput.value.focus();
+      }
+    };
 
     const searchProduct = async () => {
       if (!barcodeValue.value) return;
@@ -296,8 +257,6 @@ export default {
       error,
       foundProduct,
       recentScans,
-      showVideoFeed,
-      videoFeedUrl,
       searchProduct,
       clearInput,
       addToCart

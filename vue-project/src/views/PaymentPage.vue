@@ -295,7 +295,7 @@ export default {
         if (expiryMonth < 1 || expiryMonth > 12) {
           errors.value.expiry = 'Invalid month in expiry date';
           valid = false;
-        }         else if (expiryYear < currentYear || 
+        } else if (expiryYear < currentYear || 
             (expiryYear === currentYear && expiryMonth < currentMonth)) {
           errors.value.expiry = 'Card has expired';
           valid = false;
@@ -364,23 +364,15 @@ export default {
           transactionId: transactionId,
           orderId: order.value.orderId,
           amount: order.value.finalAmount,
-          paymentMethod: paymentMethod.value,
-          paymentType: paymentMethod.value
+          paymentMethod: paymentMethod.value
         };
 
-        // Add additional card details for card payments
-        if (paymentMethod.value === 'CARD') {
-          paymentData.cardDetails = {
-            ...cardDetails.value,
-            cardNumber: cardDetails.value.cardNumber.replace(/\s/g, '') // Remove spaces
-          };
-        }
-
+        // Log payment data for debugging
         console.log('Sending payment data:', paymentData);
 
         // Process the payment
         const paymentResponse = await paymentService.processPayment(paymentData);
-        console.log('Payment response:', paymentResponse.data);
+        console.log('Payment response:', paymentResponse);
         
         // Payment successful
         successMessage.value = 'Payment processed successfully!';
@@ -400,38 +392,30 @@ export default {
         // Extract the most useful error message
         let detailedMessage = 'There was an error processing your payment.';
         
-        if (error.response && error.response.data) {
-          if (typeof error.response.data === 'string') {
-            // Try to parse JSON string
+        if (error.response) {
+          if (error.response.data) {
             try {
-              const errorData = JSON.parse(error.response.data);
-              if (errorData.message) {
-                detailedMessage = errorData.message;
+              // Try to parse the error response
+              if (typeof error.response.data === 'string') {
+                const errorData = JSON.parse(error.response.data);
+                if (errorData.message) {
+                  detailedMessage = errorData.message;
+                }
+              } else if (error.response.data.message) {
+                detailedMessage = error.response.data.message;
               }
             } catch (e) {
-              // If it's not JSON, use the raw string
+              // If parsing fails, use the raw message
               detailedMessage = error.response.data;
             }
-          } else if (error.response.data.message) {
-            // If it's already a JSON object
-            detailedMessage = error.response.data.message;
           }
+          
+          // Add status code for debugging
+          detailedMessage += ` (Status: ${error.response.status})`;
         }
         
         // Set appropriate error message
         errorMessage.value = detailedMessage;
-        
-        // Check for specific database constraint error
-        if (error.response && error.response.status === 500 && 
-            error.response.data && error.response.data.includes('CHECK constraint failed')) {
-          errorMessage.value = 'Payment type validation failed. Please contact support.';
-        }
-        
-        // If the issue is specifically with the payment endpoint
-        if (error.response && error.response.status === 404 && 
-            error.config.url.includes('/api/payment')) {
-          errorMessage.value = 'Payment service unavailable. Please try again later or contact support.';
-        }
       } finally {
         processing.value = false;
       }

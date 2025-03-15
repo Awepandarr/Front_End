@@ -35,7 +35,7 @@ export const productService = {
   
   // Get product by barcode
   getProductByBarcode(barcode) {
-    return apiClient.get(`/product?barcode=${barcode}`);
+    return apiClient.get(`/api/product/${barcode}`);
   },
   
   // Create new product
@@ -89,24 +89,15 @@ export const paymentService = {
       }
     }
     
-    // Standardize payment type field to match backend expectation
-    const standardizedData = {
-      ...paymentData,
-      // Convert payment method to enum format if needed
-      paymentType: paymentData.paymentMethod === 'CARD' ? 'CARD' : 'CASH'
-    };
-    
     // Log the data being sent in development
-    if (process.env.NODE_ENV === 'development') {
-      console.log('Sending payment data:', standardizedData);
-    }
+    console.log('Sending payment data:', paymentData);
     
-    return apiClient.post('/api/payment', standardizedData);
+    return apiClient.post('/api/payment', paymentData);
   },
   
   // Get payment by transaction ID
   getPaymentByTransactionId(transactionId) {
-    return apiClient.get(`/api/transaction/${transactionId}`);
+    return apiClient.get(`/api/payment/${transactionId}`);
   }
 };
 
@@ -212,7 +203,14 @@ apiClient.interceptors.response.use(
       } else if (status === 401) {
         error.message = 'Unauthorized access. Please log in again.';
       } else if (status === 400) {
-        error.message = `Bad request: ${error.response.data || 'Please check your input.'}`;
+        const errorData = error.response.data;
+        if (typeof errorData === 'string') {
+          error.message = `Bad request: ${errorData}`;
+        } else if (errorData && errorData.message) {
+          error.message = `Bad request: ${errorData.message}`;
+        } else {
+          error.message = 'Bad request: Please check your input.';
+        }
       } else if (status >= 500) {
         error.message = 'Server error. Please try again later.';
       }
