@@ -19,7 +19,7 @@
               </div>
               <div>
                 <h3 class="font-bold">Credit/Debit Card</h3>
-                <p class="text-sm text-gray-500">Secure card payment</p>
+                <p class="text-sm text-gray-500">Secure online payment</p>
               </div>
             </div>
           </div>
@@ -44,28 +44,23 @@
         </div>
       </div>
   
-      <!-- Card Payment Form with Enhanced Validation -->
+      <!-- Card Payment Form with Detailed Validation -->
       <div v-if="paymentMethod === 'CARD'" class="mb-6">
         <h3 class="text-xl font-bold mb-4">Card Details</h3>
         <div class="space-y-4">
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Card Number</label>
-            <div class="relative">
-              <input 
-                type="text" 
-                v-model="cardDetails.cardNumber" 
-                @input="formatCardNumber"
-                placeholder="1234 5678 9012 3456" 
-                class="w-full p-3 border rounded-md"
-                :class="{'border-red-500': v$.cardDetails.cardNumber.$error}"
-                maxlength="19"
-              />
-              <div v-if="cardTypeIcon" class="absolute right-3 top-3">
-                <component :is="cardTypeIcon" class="h-6 w-6 text-gray-500" />
-              </div>
-            </div>
-            <p v-if="v$.cardDetails.cardNumber.$error" class="text-red-500 text-sm mt-1">
-              {{ v$.cardDetails.cardNumber.$errors[0].$message }}
+            <input 
+              type="text" 
+              v-model="cardDetails.cardNumber" 
+              @input="formatCardNumber"
+              placeholder="1234 5678 9012 3456" 
+              class="w-full p-3 border rounded-md"
+              :class="{'border-red-500': cardNumberError}"
+              maxlength="19"
+            />
+            <p v-if="cardNumberError" class="text-red-500 text-sm mt-1">
+              {{ cardNumberError }}
             </p>
           </div>
   
@@ -78,26 +73,26 @@
                 @input="formatExpiryDate"
                 placeholder="MM/YY" 
                 class="w-full p-3 border rounded-md"
-                :class="{'border-red-500': v$.cardDetails.expiryDate.$error}"
+                :class="{'border-red-500': expiryDateError}"
                 maxlength="5"
               />
-              <p v-if="v$.cardDetails.expiryDate.$error" class="text-red-500 text-sm mt-1">
-                {{ v$.cardDetails.expiryDate.$errors[0].$message }}
+              <p v-if="expiryDateError" class="text-red-500 text-sm mt-1">
+                {{ expiryDateError }}
               </p>
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">CVC</label>
+              <label class="block text-sm font-medium text-gray-700 mb-1">CVV</label>
               <input 
                 type="text" 
-                v-model="cardDetails.cvc" 
-                @input="formatCVC"
+                v-model="cardDetails.cvv" 
+                @input="formatCVV"
                 placeholder="123" 
                 class="w-full p-3 border rounded-md"
-                :class="{'border-red-500': v$.cardDetails.cvc.$error}"
+                :class="{'border-red-500': cvvError}"
                 maxlength="4"
               />
-              <p v-if="v$.cardDetails.cvc.$error" class="text-red-500 text-sm mt-1">
-                {{ v$.cardDetails.cvc.$errors[0].$message }}
+              <p v-if="cvvError" class="text-red-500 text-sm mt-1">
+                {{ cvvError }}
               </p>
             </div>
           </div>
@@ -108,10 +103,10 @@
               v-model="cardDetails.cardholderName"
               placeholder="John Doe"
               class="w-full p-3 border rounded-md"
-              :class="{'border-red-500': v$.cardDetails.cardholderName.$error}"
+              :class="{'border-red-500': cardholderNameError}"
             />
-            <p v-if="v$.cardDetails.cardholderName.$error" class="text-red-500 text-sm mt-1">
-              {{ v$.cardDetails.cardholderName.$errors[0].$message }}
+            <p v-if="cardholderNameError" class="text-red-500 text-sm mt-1">
+              {{ cardholderNameError }}
             </p>
           </div>
         </div>
@@ -120,183 +115,126 @@
       <!-- Cash Payment Section -->
       <div v-if="paymentMethod === 'CASH'" class="mb-6">
         <h3 class="text-xl font-bold mb-4">Cash Payment</h3>
-        <div class="space-y-4">
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Cash Tendered</label>
-            <div class="relative">
-              <span class="absolute left-3 top-3 text-gray-500">$</span>
-              <input 
-                type="text"
-                v-model="cashAmount"
-                @input="formatCashAmount"
-                placeholder="Enter cash amount"
-                class="w-full p-3 pl-8 border rounded-md"
-                :class="{'border-red-500': v$.cashAmount.$error}"
-              />
-            </div>
-            <p v-if="v$.cashAmount.$error" class="text-red-500 text-sm mt-1">
-              {{ v$.cashAmount.$errors[0].$message }}
-            </p>
-          </div>
-          
-          <div v-if="changeAmount > 0" class="bg-green-50 p-3 rounded-md">
-            <div class="flex justify-between items-center">
-              <span class="text-green-700">Change Due:</span>
-              <span class="text-xl font-bold text-green-800">${{ changeAmount.toFixed(2) }}</span>
-            </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Cash Tendered</label>
+          <input 
+            type="number" 
+            v-model="cashAmount" 
+            placeholder="Enter cash amount" 
+            class="w-full p-3 border rounded-md"
+            :class="{'border-red-500': cashAmountError}"
+            min="0" 
+            step="0.01"
+          />
+          <p v-if="cashAmountError" class="text-red-500 text-sm mt-1">
+            {{ cashAmountError }}
+          </p>
+        </div>
+        
+        <div v-if="cashAmount > 0" class="mt-4 bg-green-50 p-3 rounded-md">
+          <div class="flex justify-between items-center">
+            <span>Change Due:</span>
+            <span class="font-bold">${{ changeAmount.toFixed(2) }}</span>
           </div>
         </div>
       </div>
   
-      <!-- Payment Button -->
+      <!-- Global Error Message -->
+      <div v-if="globalErrorMessage" class="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">
+        {{ globalErrorMessage }}
+      </div>
+  
+      <!-- Proceed Button -->
       <button 
         @click="processPayment"
+        class="w-full p-3 bg-blue-500 text-white rounded-md hover:bg-blue-600"
         :disabled="!isPaymentValid || processing"
-        class="w-full p-3 rounded-md transition-colors duration-300"
-        :class="{
-          'bg-blue-500 text-white hover:bg-blue-600': isPaymentValid && !processing,
-          'bg-gray-300 cursor-not-allowed': !isPaymentValid || processing
-        }"
       >
-        <template v-if="processing">
-          <div class="flex items-center justify-center">
-            <Spinner class="mr-2 h-5 w-5" />
-            Processing Payment...
-          </div>
-        </template>
-        <template v-else>
-          Process Payment
-        </template>
+        {{ processing ? 'Processing...' : 'Proceed to Confirmation' }}
       </button>
     </div>
-  </template>
-  <script setup>
-  import { ref, computed } from 'vue';
-  import { useVuelidate } from '@vuelidate/core';
-  import { 
-    required, 
-    minLength, 
-    maxLength, 
-    helpers 
-  } from '@vuelidate/validators';
-  import { 
-    CreditCardIcon, 
-    DollarSignIcon 
-  } from 'lucide-vue-next';
-  
-  import { paymentService } from '@/services/api.service';
-  import Spinner from '@/components/Spinner.vue';
-  
-  const props = defineProps({
-    order: {
-      type: Object,
-      required: true
-    }
-  });
-  
-  const emit = defineEmits(['payment-success', 'payment-error']);
-  
-  const paymentMethod = ref('CARD');
-  const processing = ref(false);
-  
-  const cardDetails = ref({
-    cardNumber: '',
-    expiryDate: '',
-    cvc: '',
-    cardholderName: ''
-  });
-  
-  const cashAmount = ref('');
-  
-  const cardValidations = {
-    cardNumber: {
-      required: helpers.withMessage('Card number is required', required),
-      validCardNumber: helpers.withMessage('Invalid card number', 
-        (value) => {
-          const cleanNumber = value.replace(/\s/g, '');
-          return /^\d{16}$/.test(cleanNumber);
-        }
-      )
-    },
-    expiryDate: {
-      required: helpers.withMessage('Expiry date is required', required),
-      validExpiry: helpers.withMessage('Invalid expiry date', 
-        (value) => {
-          const [month, year] = value.split('/');
-          const currentDate = new Date();
-          const expiryDate = new Date(2000 + parseInt(year), parseInt(month) - 1);
-          return expiryDate > currentDate;
-        }
-      )
-    },
-    cvc: {
-      required: helpers.withMessage('CVC is required', required),
-      minLength: minLength(3),
-      maxLength: maxLength(4),
-      numeric: helpers.withMessage('CVC must be numeric', 
-        (value) => /^\d+$/.test(value)
-      )
-    },
-    cardholderName: {
-      required: helpers.withMessage('Cardholder name is required', required),
-      validName: helpers.withMessage('Invalid name', 
-        (value) => /^[a-zA-Z\s]+$/.test(value)
-      )
-    }
-  };
-  
-// Continued PaymentForm component script
+</template>
 
-const cashValidations = {
-  cashAmount: {
-    required: helpers.withMessage('Cash amount is required', required),
-    minAmount: helpers.withMessage('Amount must cover total', 
-      (value) => parseFloat(value) >= props.order.finalAmount
-    )
+<script setup>
+import { ref, computed, onMounted } from 'vue';
+import { CreditCardIcon, DollarSignIcon } from 'lucide-vue-next';
+import { paymentService } from '@/services/api.service';
+
+const props = defineProps({
+  order: {
+    type: Object,
+    required: true
   }
-};
-
-const rules = computed(() => {
-  return paymentMethod.value === 'CARD' 
-    ? { cardDetails: cardValidations }
-    : { cashAmount: cashValidations.cashAmount };
 });
 
-const v$ = useVuelidate(rules, { cardDetails, cashAmount });
+const emit = defineEmits(['payment-success', 'payment-error']);
 
-const changeAmount = computed(() => {
-  const cashAmountValue = parseFloat(cashAmount.value) || 0;
-  return paymentMethod.value === 'CASH' 
-    ? Math.max(0, cashAmountValue - props.order.finalAmount) 
-    : 0;
+const paymentMethod = ref('CARD');
+const processing = ref(false);
+const globalErrorMessage = ref('');
+
+const cardDetails = ref({
+  cardNumber: '',
+  expiryDate: '',
+  cvv: '',
+  cardholderName: ''
+});
+const cashAmount = ref(null);
+
+// Validation error messages
+const cardNumberError = computed(() => {
+  const cleanNumber = cardDetails.value.cardNumber.replace(/\s/g, '');
+  if (!cleanNumber) return 'Card number is required';
+  if (cleanNumber.length !== 16) return 'Card number must be 16 digits';
+  return '';
 });
 
-const isPaymentValid = computed(() => {
-  return paymentMethod.value === 'CARD' 
-    ? !v$.value.cardDetails.$invalid
-    : !v$.value.cashAmount.$invalid;
+const expiryDateError = computed(() => {
+  const expiryRegex = /^(0[1-9]|1[0-2])\/\d{2}$/;
+  if (!cardDetails.value.expiryDate) return 'Expiry date is required';
+  if (!expiryRegex.test(cardDetails.value.expiryDate)) return 'Invalid expiry date format';
+  
+  const [month, year] = cardDetails.value.expiryDate.split('/');
+  const currentDate = new Date();
+  const expiryDate = new Date(2000 + parseInt(year), parseInt(month) - 1);
+  
+  if (expiryDate <= currentDate) return 'Card has expired';
+  
+  return '';
 });
 
-const cardTypeIcon = computed(() => {
-  const cardNumber = cardDetails.value.cardNumber.replace(/\s/g, '');
-  if (/^4/.test(cardNumber)) return 'VisaIcon';
-  if (/^5[1-5]/.test(cardNumber)) return 'MastercardIcon';
-  if (/^3[47]/.test(cardNumber)) return 'AmexIcon';
-  return null;
+const cvvError = computed(() => {
+  if (!cardDetails.value.cvv) return 'CVV is required';
+  if (cardDetails.value.cvv.length < 3 || cardDetails.value.cvv.length > 4) return 'CVV must be 3-4 digits';
+  return '';
+});
+
+const cardholderNameError = computed(() => {
+  if (!cardDetails.value.cardholderName) return 'Cardholder name is required';
+  if (cardDetails.value.cardholderName.length < 2) return 'Name is too short';
+  return '';
+});
+
+const cashAmountError = computed(() => {
+  if (paymentMethod.value === 'CASH') {
+    if (!cashAmount.value) return 'Cash amount is required';
+    if (cashAmount.value < props.order.finalAmount) return `Minimum amount is $${props.order.finalAmount.toFixed(2)}`;
+  }
+  return '';
 });
 
 const formatCardNumber = () => {
   let value = cardDetails.value.cardNumber.replace(/\D/g, '');
-  let formattedValue = '';
+  let formatted = '';
   
   for (let i = 0; i < value.length; i++) {
     if (i > 0 && i % 4 === 0) {
-      formattedValue += ' ';
+      formatted += ' ';
     }
-    formattedValue += value[i];
+    formatted += value[i];
   }
   
-  cardDetails.value.cardNumber = formattedValue.trim();
+  cardDetails.value.cardNumber = formatted.trim();
 };
 
 const formatExpiryDate = () => {
@@ -309,33 +247,42 @@ const formatExpiryDate = () => {
   cardDetails.value.expiryDate = value;
 };
 
-const formatCVC = () => {
-  cardDetails.value.cvc = cardDetails.value.cvc.replace(/\D/g, '');
-};
-
-const formatCashAmount = () => {
-  cashAmount.value = cashAmount.value.replace(/[^\d.]/g, '');
-  
-  const parts = cashAmount.value.split('.');
-  if (parts.length > 2) {
-    cashAmount.value = parts[0] + '.' + parts.slice(1).join('');
-  }
+const formatCVV = () => {
+  cardDetails.value.cvv = cardDetails.value.cvv.replace(/\D/g, '');
 };
 
 const selectPaymentMethod = (method) => {
   paymentMethod.value = method;
-  v$.value.$reset();
+  // Reset error messages when switching payment methods
+  globalErrorMessage.value = '';
 };
 
-const processPayment = async () => {
-  // Validate input
-  const isValid = await v$.value.$validate();
-  if (!isValid) return;
+const changeAmount = computed(() => {
+  if (paymentMethod.value === 'CASH' && cashAmount.value) {
+    return Math.max(0, cashAmount.value - props.order.finalAmount);
+  }
+  return 0;
+});
 
+const isPaymentValid = computed(() => {
+  if (paymentMethod.value === 'CARD') {
+    return !cardNumberError.value && 
+           !expiryDateError.value && 
+           !cvvError.value && 
+           !cardholderNameError.value;
+  }
+  if (paymentMethod.value === 'CASH') {
+    return !cashAmountError.value;
+  }
+  return false;
+});
+
+const processPayment = async () => {
+  // Reset error messages
+  globalErrorMessage.value = '';
   processing.value = true;
 
   try {
-    // Prepare payment data
     const paymentData = {
       transactionId: `TXN${Date.now()}`,
       orderId: props.order.orderId,
@@ -343,38 +290,51 @@ const processPayment = async () => {
       paymentMethod: paymentMethod.value
     };
 
-    // Add payment-method-specific details
+    // Add payment method specific details
     if (paymentMethod.value === 'CARD') {
       paymentData.cardDetails = {
         cardNumber: cardDetails.value.cardNumber.replace(/\s/g, ''),
         expiryDate: cardDetails.value.expiryDate,
-        cvc: cardDetails.value.cvc,
+        cvv: cardDetails.value.cvv,
         cardholderName: cardDetails.value.cardholderName
       };
     } else {
       paymentData.cashAmount = parseFloat(cashAmount.value);
     }
 
-    // Process payment via service
+    // Log the request payload for debugging
+    console.log('Payment Request Payload:', paymentData);
+
     const response = await paymentService.processPayment(paymentData);
 
     // Emit success event
     emit('payment-success', {
       transactionId: paymentData.transactionId,
-      paymentMethod: paymentMethod.value,
-      amount: props.order.finalAmount
+      amount: props.order.finalAmount,
+      method: paymentMethod.value
     });
   } catch (error) {
+    // Log the full error for debugging
+    console.error('Payment Processing Error:', error);
+
+    // Try to extract a meaningful error message
+    const errorMessage = error.response?.data?.message || 
+                         error.message || 
+                         'There was an error processing your order.';
+    
+    // Set global error message
+    globalErrorMessage.value = errorMessage;
+
     // Emit error event
     emit('payment-error', {
-      message: error.message || 'Payment processing failed'
+      message: errorMessage
     });
   } finally {
     processing.value = false;
   }
 };
 
-// Expose methods and computed properties
+// Expose methods for potential parent component interaction
 defineExpose({
   processPayment,
   isPaymentValid,
