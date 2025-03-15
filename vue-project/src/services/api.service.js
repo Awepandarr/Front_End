@@ -22,7 +22,6 @@ apiClient.interceptors.request.use(config => {
 });
 
 // Product API endpoints
-// Product API endpoints - corrected implementation
 export const productService = {
   // Get all products
   getAllProducts() {
@@ -34,7 +33,7 @@ export const productService = {
     return apiClient.get(`/api/product/id/${productId}`);
   },
   
-  // Get product by barcode - CORRECTED ENDPOINT
+  // Get product by barcode
   getProductByBarcode(barcode) {
     return apiClient.get(`/api/product/barcode/${barcode}`);
   },
@@ -80,25 +79,128 @@ export const orderService = {
 
 // Payment API endpoints
 export const paymentService = {
-  // Process payment
-  processPayment(paymentData) {
-    // Ensure we have all required fields
-    const requiredFields = ['orderId', 'amount', 'paymentMethod', 'transactionId'];
+  // Process payment with comprehensive error handling
+  async processPayment(paymentData) {
+    // Validate required fields
+    const requiredFields = [
+      'transactionId', 
+      'orderId', 
+      'amount', 
+      'paymentMethod'
+    ];
+
     for (const field of requiredFields) {
       if (!paymentData[field]) {
-        return Promise.reject(new Error(`Missing required field: ${field}`));
+        throw new Error(`Missing required payment field: ${field}`);
       }
     }
-    
-    // Log the data being sent in development
-    console.log('Sending payment data:', paymentData);
-    
-    return apiClient.post('/api/payment', paymentData);
+
+    // Standardize payment method
+    paymentData.paymentMethod = paymentData.paymentMethod.toUpperCase();
+
+    // Specific validation for different payment methods
+    if (paymentData.paymentMethod === 'CARD') {
+      const cardValidation = this.validateCardDetails(paymentData);
+      if (!cardValidation.valid) {
+        throw new Error(cardValidation.error);
+      }
+    }
+
+    try {
+      const response = await apiClient.post('/api/payment', paymentData);
+      return response.data;
+    } catch (error) {
+      // Enhanced error handling
+      if (error.response) {
+        switch (error.response.status) {
+          case 400:
+            throw new Error('Invalid payment details. Please check your input.');
+          case 402:
+            throw new Error('Payment was declined. Please try another payment method.');
+          case 403:
+            throw new Error('Insufficient funds or payment not authorized.');
+          case 500:
+            throw new Error('Payment processing temporarily unavailable. Please try again later.');
+          default:
+            throw new Error(error.response.data.message || 'Payment processing failed');
+        }
+      } else {
+        throw new Error('Network error. Please check your connection.');
+      }
+    }
   },
-  
-  // Get payment by transaction ID
-  getPaymentByTransactionId(transactionId) {
-    return apiClient.get(`/api/payment/${transactionId}`);
+
+  // Card details validation helper method
+  validateCardDetails(paymentData) {
+    const { cardDetails } = paymentData;
+    const { cardNumber, expiryDate: cardExpiryDate, cvc } = cardDetails || {};
+
+    // Basic card number validation (Luhn algorithm)
+    const validateCardNumber = (number) => {
+      const digits = number.replace(/\D/g, '');
+      let sum = 0;
+      let isEvenIndex = false;
+
+      for (let i = digits.length - 1; i >= 0; i--) {
+        let digit = parseInt(digits.charAt(i), 10);
+
+        if (isEvenIndex) {
+          digit *= 2;
+          if (digit > 9) digit -= 9;
+        }
+
+        sum += digit;
+        isEvenIndex = !isEvenIndex;
+      }
+
+      return sum % 10 === 0;
+    };
+
+    // Validate card number
+    if (!cardNumber || !validateCardNumber(cardNumber)) {
+      return { valid: false, error: 'Invalid card number' };
+    }
+
+    // Validate expiry date
+    const [month, year] = cardExpiryDate.split('/');
+    const currentDate = new Date();
+    const expiryDateObj = new Date(2000 + parseInt(year), parseInt(month) - 1);
+
+    if (expiryDateObj <= currentDate) {
+      return { valid: false, error: 'Card has expired' };
+    }
+
+    // Validate CVC
+    if (!cvc || !/^\d{3,4}$/.test(cvc)) {
+      return { valid: false, error: 'Invalid CVC' };
+    }
+
+    return { valid: true };
+  },
+
+  // Get payment status by transaction ID
+  async getPaymentStatus(transactionId) {
+    try {
+      const response = await apiClient.get(`/api/payment/status/${transactionId}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching payment status:', error);
+      throw error;
+    }
+  },
+
+  // Refund payment
+  async refundPayment(transactionId, reason) {
+    try {
+      const response = await apiClient.post('/api/payment/refund', {
+        transactionId,
+        reason
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error processing refund:', error);
+      throw error;
+    }
   }
 };
 
@@ -232,5 +334,6 @@ export default {
   customerService,
   transactionService,
   invoiceService,
-  reportService
+  reportService,
+  apiClient
 };

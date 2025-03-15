@@ -1,421 +1,383 @@
-// src/components/PaymentForm.vue
+<!-- Enhanced PaymentForm Component -->
 <template>
-  <div class="bg-white rounded-lg shadow-lg p-6">
-    <!-- Payment Method Selection -->
-    <div class="mb-6">
-      <h3 class="text-xl font-bold mb-4">Payment Method</h3>
-      <div class="grid grid-cols-2 gap-4">
-        <div 
-          class="border rounded-lg p-4 cursor-pointer transition-all duration-300"
-          :class="{'border-blue-500 bg-blue-50 shadow-md': paymentMethod === 'CARD'}"
-          @click="selectPaymentMethod('CARD')"
-        >
-          <div class="flex items-center">
-            <div class="bg-blue-100 rounded-full p-2 mr-3">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-              </svg>
-            </div>
-            <div>
-              <h3 class="font-bold">Credit/Debit Card</h3>
-              <p class="text-sm text-gray-500">Pay with credit or debit card</p>
-            </div>
-          </div>
-        </div>
-        <div 
-          class="border rounded-lg p-4 cursor-pointer transition-all duration-300"
-          :class="{'border-blue-500 bg-blue-50 shadow-md': paymentMethod === 'CASH'}"
-          @click="selectPaymentMethod('CASH')"
-        >
-          <div class="flex items-center">
-            <div class="bg-green-100 rounded-full p-2 mr-3">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2z" />
-              </svg>
-            </div>
-            <div>
-              <h3 class="font-bold">Cash</h3>
-              <p class="text-sm text-gray-500">Pay with cash</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Card Payment Form -->
-    <div v-if="paymentMethod === 'CARD'" class="mb-6">
-      <h3 class="text-xl font-bold mb-4">Card Details</h3>
-      <div class="space-y-4">
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Card Number</label>
-          <input 
-            type="text" 
-            v-model="cardDetails.cardNumber" 
-            placeholder="1234 5678 9012 3456" 
-            class="w-full p-3 border rounded-md"
-            :class="{'border-red-500': errors.cardNumber}"
-            @input="formatCardNumber"
-            maxlength="19"
-          >
-          <p v-if="errors.cardNumber" class="text-red-500 text-sm mt-1">{{ errors.cardNumber }}</p>
-        </div>
+    <div class="bg-white rounded-lg shadow-lg p-6">
+      <!-- Payment Method Selection with Enhanced Validation -->
+      <div class="mb-6">
+        <h3 class="text-xl font-bold mb-4">Payment Method</h3>
         <div class="grid grid-cols-2 gap-4">
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Expiry Date</label>
-            <input 
-              type="text" 
-              v-model="cardDetails.expiry" 
-              placeholder="MM/YY" 
-              class="w-full p-3 border rounded-md"
-              :class="{'border-red-500': errors.expiry}"
-              @input="formatExpiry"
-              maxlength="5"
-            >
-            <p v-if="errors.expiry" class="text-red-500 text-sm mt-1">{{ errors.expiry }}</p>
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">CVC</label>
-            <input 
-              type="text" 
-              v-model="cardDetails.cvc" 
-              placeholder="123" 
-              class="w-full p-3 border rounded-md"
-              :class="{'border-red-500': errors.cvc}"
-              maxlength="4"
-              @input="validateNumericInput('cvc')"
-            >
-            <p v-if="errors.cvc" class="text-red-500 text-sm mt-1">{{ errors.cvc }}</p>
-          </div>
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Cardholder Name</label>
-          <input 
-            type="text" 
-            v-model="cardDetails.cardholderName" 
-            placeholder="John Doe" 
-            class="w-full p-3 border rounded-md"
-            :class="{'border-red-500': errors.cardholderName}"
+          <div 
+            class="border rounded-lg p-4 cursor-pointer transition-all duration-300"
+            :class="{
+              'border-blue-500 bg-blue-50 shadow-md': paymentMethod === 'CARD',
+              'border-gray-300': paymentMethod !== 'CARD'
+            }"
+            @click="selectPaymentMethod('CARD')"
           >
-          <p v-if="errors.cardholderName" class="text-red-500 text-sm mt-1">{{ errors.cardholderName }}</p>
+            <div class="flex items-center">
+              <div class="bg-blue-100 rounded-full p-2 mr-3">
+                <CreditCardIcon class="h-6 w-6 text-blue-500" />
+              </div>
+              <div>
+                <h3 class="font-bold">Credit/Debit Card</h3>
+                <p class="text-sm text-gray-500">Secure card payment</p>
+              </div>
+            </div>
+          </div>
+          <div 
+            class="border rounded-lg p-4 cursor-pointer transition-all duration-300"
+            :class="{
+              'border-green-500 bg-green-50 shadow-md': paymentMethod === 'CASH',
+              'border-gray-300': paymentMethod !== 'CASH'
+            }"
+            @click="selectPaymentMethod('CASH')"
+          >
+            <div class="flex items-center">
+              <div class="bg-green-100 rounded-full p-2 mr-3">
+                <DollarSignIcon class="h-6 w-6 text-green-500" />
+              </div>
+              <div>
+                <h3 class="font-bold">Cash</h3>
+                <p class="text-sm text-gray-500">Pay with physical currency</p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
-
-    <!-- Cash Payment -->
-    <div v-if="paymentMethod === 'CASH'" class="mb-6">
-      <h3 class="text-xl font-bold mb-4">Cash Payment</h3>
-      <div class="space-y-4">
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Amount Tendered</label>
-          <div class="relative">
-            <span class="absolute left-3 top-3 text-gray-500">$</span>
+  
+      <!-- Card Payment Form with Enhanced Validation -->
+      <div v-if="paymentMethod === 'CARD'" class="mb-6">
+        <h3 class="text-xl font-bold mb-4">Card Details</h3>
+        <div class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Card Number</label>
+            <div class="relative">
+              <input 
+                type="text" 
+                v-model="cardDetails.cardNumber" 
+                @input="formatCardNumber"
+                placeholder="1234 5678 9012 3456" 
+                class="w-full p-3 border rounded-md"
+                :class="{'border-red-500': v$.cardDetails.cardNumber.$error}"
+                maxlength="19"
+              />
+              <div v-if="cardTypeIcon" class="absolute right-3 top-3">
+                <component :is="cardTypeIcon" class="h-6 w-6 text-gray-500" />
+              </div>
+            </div>
+            <p v-if="v$.cardDetails.cardNumber.$error" class="text-red-500 text-sm mt-1">
+              {{ v$.cardDetails.cardNumber.$errors[0].$message }}
+            </p>
+          </div>
+  
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Expiry Date</label>
+              <input 
+                type="text" 
+                v-model="cardDetails.expiryDate" 
+                @input="formatExpiryDate"
+                placeholder="MM/YY" 
+                class="w-full p-3 border rounded-md"
+                :class="{'border-red-500': v$.cardDetails.expiryDate.$error}"
+                maxlength="5"
+              />
+              <p v-if="v$.cardDetails.expiryDate.$error" class="text-red-500 text-sm mt-1">
+                {{ v$.cardDetails.expiryDate.$errors[0].$message }}
+              </p>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">CVC</label>
+              <input 
+                type="text" 
+                v-model="cardDetails.cvc" 
+                @input="formatCVC"
+                placeholder="123" 
+                class="w-full p-3 border rounded-md"
+                :class="{'border-red-500': v$.cardDetails.cvc.$error}"
+                maxlength="4"
+              />
+              <p v-if="v$.cardDetails.cvc.$error" class="text-red-500 text-sm mt-1">
+                {{ v$.cardDetails.cvc.$errors[0].$message }}
+              </p>
+            </div>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Cardholder Name</label>
             <input 
               type="text" 
-              v-model="cashAmount" 
-              class="w-full p-3 pl-7 border rounded-md"
-              :class="{'border-red-500': errors.cashAmount}"
-              @input="validateNumericInput('cash')"
-            >
-          </div>
-          <p v-if="errors.cashAmount" class="text-red-500 text-sm mt-1">{{ errors.cashAmount }}</p>
-        </div>
-        <div v-if="parseFloat(cashAmount) > 0 && orderTotal > 0">
-          <label class="block text-sm font-medium text-gray-700 mb-1">Change</label>
-          <div class="p-3 bg-gray-100 rounded-md font-bold">
-            ${{ calculateChange() }}
+              v-model="cardDetails.cardholderName"
+              placeholder="John Doe"
+              class="w-full p-3 border rounded-md"
+              :class="{'border-red-500': v$.cardDetails.cardholderName.$error}"
+            />
+            <p v-if="v$.cardDetails.cardholderName.$error" class="text-red-500 text-sm mt-1">
+              {{ v$.cardDetails.cardholderName.$errors[0].$message }}
+            </p>
           </div>
         </div>
       </div>
-    </div>
-
-    <!-- Process Payment Button -->
-    <button 
-      @click="processPayment" 
-      class="w-full p-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors font-bold"
-      :disabled="processing"
-    >
-      <span v-if="processing">
-        <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-        </svg>
-        Processing...
-      </span>
-      <span v-else>Process Payment</span>
-    </button>
-  </div>
-</template>
-
-<script>
-import { ref, computed } from 'vue';
-import { useRouter } from 'vue-router';
-import { paymentService } from '../services/api.service';
-
-export default {
-  name: 'PaymentForm',
   
-  props: {
+      <!-- Cash Payment Section -->
+      <div v-if="paymentMethod === 'CASH'" class="mb-6">
+        <h3 class="text-xl font-bold mb-4">Cash Payment</h3>
+        <div class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Cash Tendered</label>
+            <div class="relative">
+              <span class="absolute left-3 top-3 text-gray-500">$</span>
+              <input 
+                type="text"
+                v-model="cashAmount"
+                @input="formatCashAmount"
+                placeholder="Enter cash amount"
+                class="w-full p-3 pl-8 border rounded-md"
+                :class="{'border-red-500': v$.cashAmount.$error}"
+              />
+            </div>
+            <p v-if="v$.cashAmount.$error" class="text-red-500 text-sm mt-1">
+              {{ v$.cashAmount.$errors[0].$message }}
+            </p>
+          </div>
+          
+          <div v-if="changeAmount > 0" class="bg-green-50 p-3 rounded-md">
+            <div class="flex justify-between items-center">
+              <span class="text-green-700">Change Due:</span>
+              <span class="text-xl font-bold text-green-800">${{ changeAmount.toFixed(2) }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+  
+      <!-- Payment Button -->
+      <button 
+        @click="processPayment"
+        :disabled="!isPaymentValid || processing"
+        class="w-full p-3 rounded-md transition-colors duration-300"
+        :class="{
+          'bg-blue-500 text-white hover:bg-blue-600': isPaymentValid && !processing,
+          'bg-gray-300 cursor-not-allowed': !isPaymentValid || processing
+        }"
+      >
+        <template v-if="processing">
+          <div class="flex items-center justify-center">
+            <Spinner class="mr-2 h-5 w-5" />
+            Processing Payment...
+          </div>
+        </template>
+        <template v-else>
+          Process Payment
+        </template>
+      </button>
+    </div>
+  </template>
+  <script setup>
+  import { ref, computed } from 'vue';
+  import { useVuelidate } from '@vuelidate/core';
+  import { 
+    required, 
+    minLength, 
+    maxLength, 
+    helpers 
+  } from '@vuelidate/validators';
+  import { 
+    CreditCardIcon, 
+    DollarSignIcon 
+  } from 'lucide-vue-next';
+  
+  import { paymentService } from '@/services/api.service';
+  import Spinner from '@/components/Spinner.vue';
+  
+  const props = defineProps({
     order: {
       type: Object,
       required: true
     }
-  },
+  });
   
-  emits: ['payment-success', 'payment-error'],
+  const emit = defineEmits(['payment-success', 'payment-error']);
   
-  setup(props, { emit }) {
-    const router = useRouter();
-    const paymentMethod = ref('CARD');
-    const processing = ref(false);
-    const errors = ref({});
-    
-    const cardDetails = ref({
-      cardNumber: '',
-      expiry: '',
-      cvc: '',
-      cardholderName: ''
-    });
-    
-    const cashAmount = ref('');
-    
-    const orderTotal = computed(() => {
-      return props.order?.finalAmount || 0;
-    });
-    
-    const selectPaymentMethod = (method) => {
-      paymentMethod.value = method;
-      errors.value = {};
-    };
-    
-    const formatCardNumber = () => {
-      // Remove any non-digit characters
-      let value = cardDetails.value.cardNumber.replace(/\D/g, '');
-      
-      // Format with spaces after every 4 digits
-      let formattedValue = '';
-      for (let i = 0; i < value.length; i++) {
-        if (i > 0 && i % 4 === 0) {
-          formattedValue += ' ';
+  const paymentMethod = ref('CARD');
+  const processing = ref(false);
+  
+  const cardDetails = ref({
+    cardNumber: '',
+    expiryDate: '',
+    cvc: '',
+    cardholderName: ''
+  });
+  
+  const cashAmount = ref('');
+  
+  const cardValidations = {
+    cardNumber: {
+      required: helpers.withMessage('Card number is required', required),
+      validCardNumber: helpers.withMessage('Invalid card number', 
+        (value) => {
+          const cleanNumber = value.replace(/\s/g, '');
+          return /^\d{16}$/.test(cleanNumber);
         }
-        formattedValue += value[i];
-      }
-      
-      // Update the value
-      cardDetails.value.cardNumber = formattedValue.trim();
-    };
-    
-    const formatExpiry = () => {
-      // Remove any non-digit characters
-      let value = cardDetails.value.expiry.replace(/\D/g, '');
-      
-      // Format as MM/YY
-      if (value.length > 2) {
-        value = value.substring(0, 2) + '/' + value.substring(2);
-      }
-      
-      // Update the value
-      cardDetails.value.expiry = value;
-    };
-    
-    const validateNumericInput = (field) => {
-      if (field === 'cvc') {
-        // Allow only digits for CVC
-        cardDetails.value.cvc = cardDetails.value.cvc.replace(/\D/g, '');
-      } else if (field === 'cash') {
-        // Allow digits and one decimal point for cash amount
-        const value = cashAmount.value.replace(/[^\d.]/g, '');
-        
-        // Ensure only one decimal point
-        const parts = value.split('.');
-        if (parts.length > 2) {
-          cashAmount.value = parts[0] + '.' + parts.slice(1).join('');
-        } else {
-          cashAmount.value = value;
+      )
+    },
+    expiryDate: {
+      required: helpers.withMessage('Expiry date is required', required),
+      validExpiry: helpers.withMessage('Invalid expiry date', 
+        (value) => {
+          const [month, year] = value.split('/');
+          const currentDate = new Date();
+          const expiryDate = new Date(2000 + parseInt(year), parseInt(month) - 1);
+          return expiryDate > currentDate;
         }
-      }
-    };
-    
-    const calculateChange = () => {
-      const amount = parseFloat(cashAmount.value) || 0;
-      const total = orderTotal.value;
-      
-      const change = amount - total;
-      return change > 0 ? change.toFixed(2) : '0.00';
-    };
-    
-    const validateCardDetails = () => {
-      errors.value = {};
-      let valid = true;
-      
-      // Card number validation
-      if (!cardDetails.value.cardNumber) {
-        errors.value.cardNumber = 'Card number is required';
-        valid = false;
-      } else {
-        // Remove spaces and check if it's a valid 16-digit number
-        const cardNumber = cardDetails.value.cardNumber.replace(/\s/g, '');
-        if (!/^\d{16}$/.test(cardNumber)) {
-          errors.value.cardNumber = 'Please enter a valid 16-digit card number';
-          valid = false;
-        }
-      }
-      
-      // Expiry date validation
-      if (!cardDetails.value.expiry) {
-        errors.value.expiry = 'Expiry date is required';
-        valid = false;
-      } else if (!/^\d{2}\/\d{2}$/.test(cardDetails.value.expiry)) {
-        errors.value.expiry = 'Please enter a valid expiry date (MM/YY)';
-        valid = false;
-      } else {
-        // Check if the expiry date is in the future
-        const [month, year] = cardDetails.value.expiry.split('/');
-        const expiryDate = new Date(2000 + parseInt(year), parseInt(month) - 1);
-        const currentDate = new Date();
-        
-        if (expiryDate < currentDate) {
-          errors.value.expiry = 'Card has expired';
-          valid = false;
-        }
-      }
-      
-      // CVC validation
-      if (!cardDetails.value.cvc) {
-        errors.value.cvc = 'CVC is required';
-        valid = false;
-      } else if (!/^\d{3,4}$/.test(cardDetails.value.cvc)) {
-        errors.value.cvc = 'Please enter a valid CVC (3-4 digits)';
-        valid = false;
-      }
-      
-      // Cardholder name validation
-      if (!cardDetails.value.cardholderName) {
-        errors.value.cardholderName = 'Cardholder name is required';
-        valid = false;
-      }
-      
-      return valid;
-    };
-    
-    const validateCashPayment = () => {
-      errors.value = {};
-      let valid = true;
-      
-      if (!cashAmount.value || isNaN(parseFloat(cashAmount.value))) {
-        errors.value.cashAmount = 'Please enter a valid amount';
-        valid = false;
-      } else if (parseFloat(cashAmount.value) < orderTotal.value) {
-        errors.value.cashAmount = `Amount must be at least $${orderTotal.value.toFixed(2)}`;
-        valid = false;
-      }
-      
-      return valid;
-    };
-    
-    const processPayment = async () => {
-      // Validate based on payment method
-      const isValid = paymentMethod.value === 'CARD' 
-        ? validateCardDetails() 
-        : validateCashPayment();
-      
-      if (!isValid) return;
-      
-      processing.value = true;
-      
-      try {
-        // Prepare payment data
-        const paymentData = {
-          transactionId: 'TXN' + Date.now(),
-          orderId: props.order.orderId,
-          amount: orderTotal.value,
-          paymentMethod: paymentMethod.value
-        };
-        
-        // Add card details if paying by card
-        if (paymentMethod.value === 'CARD') {
-          paymentData.cardDetails = {
-            cardNumber: cardDetails.value.cardNumber.replace(/\s/g, ''),
-            expiryDate: cardDetails.value.expiry,
-            cvc: cardDetails.value.cvc,
-            cardholderName: cardDetails.value.cardholderName
-          };
-        }
-        
-        // Send payment request
-        const response = await paymentService.processPayment(paymentData);
-        
-        // Emit success event
-        emit('payment-success', {
-          transactionId: paymentData.transactionId,
-          paymentMethod: paymentMethod.value,
-          amount: orderTotal.value
-        });
-        
-        // Generate invoice
-        await generateInvoice(props.order);
-        
-        // Navigate to confirmation page
-        router.push('/confirmation');
-      } catch (error) {
-        console.error('Payment error:', error);
-        
-        // Emit error event
-        emit('payment-error', {
-          message: error.response?.data?.message || 'Payment processing failed'
-        });
-      } finally {
-        processing.value = false;
-      }
-    };
-    
-    const generateInvoice = async (order) => {
-      try {
-        // Prepare invoice data
-        const invoiceData = {
-          orderId: order.orderId,
-          customerId: order.customerId || 1,
-          invoiceDate: new Date().toISOString(),
-          subtotal: order.totalAmount,
-          discount: order.discountAmount || 0,
-          taxAmount: order.taxAmount || 0,
-          serviceCharge: 0,
-          finalAmount: order.finalAmount
-        };
-        
-        // Call the invoice service API
-        const response = await fetch('/invoice', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(invoiceData)
-        });
-        
-        if (!response.ok) {
-          throw new Error('Failed to generate invoice');
-        }
-        
-        return await response.json();
-      } catch (error) {
-        console.error('Error generating invoice:', error);
-        // Don't throw error here - invoice generation failure shouldn't block payment completion
-      }
-    };
-    
-    return {
-      paymentMethod,
-      cardDetails,
-      cashAmount,
-      errors,
-      processing,
-      orderTotal,
-      selectPaymentMethod,
-      formatCardNumber,
-      formatExpiry,
-      validateNumericInput,
-      calculateChange,
-      processPayment
-    };
+      )
+    },
+    cvc: {
+      required: helpers.withMessage('CVC is required', required),
+      minLength: minLength(3),
+      maxLength: maxLength(4),
+      numeric: helpers.withMessage('CVC must be numeric', 
+        (value) => /^\d+$/.test(value)
+      )
+    },
+    cardholderName: {
+      required: helpers.withMessage('Cardholder name is required', required),
+      validName: helpers.withMessage('Invalid name', 
+        (value) => /^[a-zA-Z\s]+$/.test(value)
+      )
+    }
+  };
+  
+// Continued PaymentForm component script
+
+const cashValidations = {
+  cashAmount: {
+    required: helpers.withMessage('Cash amount is required', required),
+    minAmount: helpers.withMessage('Amount must cover total', 
+      (value) => parseFloat(value) >= props.order.finalAmount
+    )
   }
 };
+
+const rules = computed(() => {
+  return paymentMethod.value === 'CARD' 
+    ? { cardDetails: cardValidations }
+    : { cashAmount: cashValidations.cashAmount };
+});
+
+const v$ = useVuelidate(rules, { cardDetails, cashAmount });
+
+const changeAmount = computed(() => {
+  const cashAmountValue = parseFloat(cashAmount.value) || 0;
+  return paymentMethod.value === 'CASH' 
+    ? Math.max(0, cashAmountValue - props.order.finalAmount) 
+    : 0;
+});
+
+const isPaymentValid = computed(() => {
+  return paymentMethod.value === 'CARD' 
+    ? !v$.value.cardDetails.$invalid
+    : !v$.value.cashAmount.$invalid;
+});
+
+const cardTypeIcon = computed(() => {
+  const cardNumber = cardDetails.value.cardNumber.replace(/\s/g, '');
+  if (/^4/.test(cardNumber)) return 'VisaIcon';
+  if (/^5[1-5]/.test(cardNumber)) return 'MastercardIcon';
+  if (/^3[47]/.test(cardNumber)) return 'AmexIcon';
+  return null;
+});
+
+const formatCardNumber = () => {
+  let value = cardDetails.value.cardNumber.replace(/\D/g, '');
+  let formattedValue = '';
+  
+  for (let i = 0; i < value.length; i++) {
+    if (i > 0 && i % 4 === 0) {
+      formattedValue += ' ';
+    }
+    formattedValue += value[i];
+  }
+  
+  cardDetails.value.cardNumber = formattedValue.trim();
+};
+
+const formatExpiryDate = () => {
+  let value = cardDetails.value.expiryDate.replace(/\D/g, '');
+  
+  if (value.length > 2) {
+    value = value.substring(0, 2) + '/' + value.substring(2);
+  }
+  
+  cardDetails.value.expiryDate = value;
+};
+
+const formatCVC = () => {
+  cardDetails.value.cvc = cardDetails.value.cvc.replace(/\D/g, '');
+};
+
+const formatCashAmount = () => {
+  cashAmount.value = cashAmount.value.replace(/[^\d.]/g, '');
+  
+  const parts = cashAmount.value.split('.');
+  if (parts.length > 2) {
+    cashAmount.value = parts[0] + '.' + parts.slice(1).join('');
+  }
+};
+
+const selectPaymentMethod = (method) => {
+  paymentMethod.value = method;
+  v$.value.$reset();
+};
+
+const processPayment = async () => {
+  // Validate input
+  const isValid = await v$.value.$validate();
+  if (!isValid) return;
+
+  processing.value = true;
+
+  try {
+    // Prepare payment data
+    const paymentData = {
+      transactionId: `TXN${Date.now()}`,
+      orderId: props.order.orderId,
+      amount: props.order.finalAmount,
+      paymentMethod: paymentMethod.value
+    };
+
+    // Add payment-method-specific details
+    if (paymentMethod.value === 'CARD') {
+      paymentData.cardDetails = {
+        cardNumber: cardDetails.value.cardNumber.replace(/\s/g, ''),
+        expiryDate: cardDetails.value.expiryDate,
+        cvc: cardDetails.value.cvc,
+        cardholderName: cardDetails.value.cardholderName
+      };
+    } else {
+      paymentData.cashAmount = parseFloat(cashAmount.value);
+    }
+
+    // Process payment via service
+    const response = await paymentService.processPayment(paymentData);
+
+    // Emit success event
+    emit('payment-success', {
+      transactionId: paymentData.transactionId,
+      paymentMethod: paymentMethod.value,
+      amount: props.order.finalAmount
+    });
+  } catch (error) {
+    // Emit error event
+    emit('payment-error', {
+      message: error.message || 'Payment processing failed'
+    });
+  } finally {
+    processing.value = false;
+  }
+};
+
+// Expose methods and computed properties
+defineExpose({
+  processPayment,
+  isPaymentValid,
+  paymentMethod
+});
 </script>
