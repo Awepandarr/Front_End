@@ -132,7 +132,9 @@ export default {
     onMounted(() => {
       // Focus the input on component mount
       nextTick(() => {
-        barcodeInput.value.focus();
+        if (barcodeInput.value) {
+          barcodeInput.value.focus();
+        }
       });
       
       // Check scanner connection
@@ -146,6 +148,7 @@ export default {
       if (savedScans) {
         try {
           recentScans.value = JSON.parse(savedScans);
+          console.log('Loaded recent scans:', recentScans.value);
         } catch (err) {
           console.error('Error parsing recent scans:', err);
         }
@@ -170,7 +173,7 @@ export default {
       }
 
       // Focus barcode input when any key is pressed and input is not already focused
-      if (activeElement !== barcodeInput.value) {
+      if (activeElement !== barcodeInput.value && barcodeInput.value) {
         barcodeInput.value.focus();
       }
     };
@@ -182,16 +185,20 @@ export default {
       error.value = '';
       foundProduct.value = null;
       
+      console.log('Searching for product with barcode:', barcodeValue.value);
+      
       try {
         const response = await productService.getProductByBarcode(barcodeValue.value);
         
         if (response.data) {
+          console.log('Product found:', response.data);
           foundProduct.value = response.data;
           emit('product-found', foundProduct.value);
           
           // Add to recent scans
           addToRecentScans(barcodeValue.value);
         } else {
+          console.log('Product not found');
           error.value = 'Product not found';
         }
       } catch (err) {
@@ -200,6 +207,7 @@ export default {
         
         // For demo purposes, simulate finding a product even if API fails
         if (barcodeValue.value === '123456789') {
+          console.log('Using demo product for barcode 123456789');
           foundProduct.value = {
             productId: 1,
             name: 'Demo Product',
@@ -209,6 +217,24 @@ export default {
           };
           emit('product-found', foundProduct.value);
           addToRecentScans(barcodeValue.value);
+        } else if (barcodeValue.value.length >= 8 && barcodeValue.value.length <= 13) {
+          // Try to find a product from our demo data
+          const mockProducts = [
+            { productId: 1, name: 'Laptop', price: 999.99, categoryId: 1, stockQuantity: 10, barcode: '123456789' },
+            { productId: 2, name: 'Smartphone', price: 499.99, categoryId: 1, stockQuantity: 15, barcode: '234567890' },
+            { productId: 3, name: 'T-Shirt', price: 19.99, categoryId: 2, stockQuantity: 50, barcode: '345678901' },
+            { productId: 4, name: 'Coffee Maker', price: 89.99, categoryId: 3, stockQuantity: 8, barcode: '456789012' },
+            { productId: 5, name: 'Novel', price: 12.99, categoryId: 4, stockQuantity: 30, barcode: '567890123' }
+          ];
+          
+          // Try to find the product by barcode
+          const mockProduct = mockProducts.find(p => p.barcode === barcodeValue.value);
+          if (mockProduct) {
+            console.log('Found mock product:', mockProduct);
+            foundProduct.value = mockProduct;
+            emit('product-found', foundProduct.value);
+            addToRecentScans(barcodeValue.value);
+          }
         }
       } finally {
         loading.value = false;
@@ -241,7 +267,9 @@ export default {
       error.value = '';
       foundProduct.value = null;
       nextTick(() => {
-        barcodeInput.value.focus();
+        if (barcodeInput.value) {
+          barcodeInput.value.focus();
+        }
       });
     };
 
