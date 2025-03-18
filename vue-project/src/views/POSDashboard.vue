@@ -2,122 +2,178 @@
 <template>
   <div class="bg-gray-100 min-h-screen">
     <div class="container mx-auto px-6 py-8">
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <!-- Left Panel: Barcode Scanner and Product Search -->
-        <div class="lg:col-span-2 space-y-6">
-          <!-- Barcode Scanner -->
-          <BarcodeScanner 
-            @product-found="handleProductFound" 
-            @add-to-cart="addToCart" 
-          />
-          
-          <!-- Product Categories and List -->
-          <div class="bg-white rounded-lg shadow-lg overflow-hidden">
-            <!-- Category Tabs -->
-            <div class="flex overflow-x-auto bg-blue-500">
-              <button 
-                v-for="category in categories" 
-                :key="category.id"
-                @click="activeCategory = category.id"
-                :class="[
-                  'px-6 py-4 text-lg font-medium whitespace-nowrap focus:outline-none',
-                  activeCategory === category.id ? 'bg-blue-600 text-white' : 'text-blue-100 hover:bg-blue-400 hover:text-white'
-                ]"
+      <div class="flex flex-col md:flex-row gap-8">
+        <!-- Left Panel: Product Categories and List -->
+        <div class="w-full md:w-2/3 bg-white rounded-lg shadow-lg overflow-hidden">
+          <!-- Category Tabs -->
+          <div class="flex overflow-x-auto bg-blue-500">
+            <button 
+              v-for="category in categories" 
+              :key="category.id"
+              @click="activeCategory = category.id"
+              :class="[
+                'px-6 py-4 text-lg font-medium whitespace-nowrap focus:outline-none',
+                activeCategory === category.id ? 'bg-blue-600 text-white' : 'text-blue-100 hover:bg-blue-400 hover:text-white'
+              ]"
+            >
+              {{ category.name }}
+            </button>
+          </div>
+
+          <!-- Product Grid -->
+          <div class="p-8">
+            <div class="mb-6">
+              <input 
+                type="text" 
+                v-model="searchQuery" 
+                placeholder="Search products..." 
+                class="w-full px-4 py-3 text-lg border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
               >
-                {{ category.name }}
-              </button>
             </div>
-
-            <!-- Loading Indicator -->
-            <div v-if="loading" class="p-8 text-center">
-              <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
-              <p class="mt-4 text-gray-500">Loading products...</p>
-            </div>
-
-            <!-- Error Message -->
-            <div v-else-if="errorMessage" class="p-8 text-center">
-              <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4">
-                <p>{{ errorMessage }}</p>
-              </div>
-              <button 
-                @click="fetchProducts" 
-                class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
+              <div 
+                v-for="product in filteredProducts" 
+                :key="product.productId"
+                @click="addToCart(product)"
+                class="bg-white rounded-lg shadow-md p-6 cursor-pointer transition-transform duration-300 ease-in-out transform hover:-translate-y-1 hover:shadow-lg"
               >
-                Try Again
-              </button>
-            </div>
-
-            <!-- Product Grid -->
-            <div v-else class="p-8">
-              <div class="mb-6">
-                <input 
-                  type="text" 
-                  v-model="searchQuery" 
-                  placeholder="Search products..." 
-                  class="w-full px-4 py-3 text-lg border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                >
-              </div>
-              
-              <!-- No Products Message -->
-              <div v-if="filteredProducts.length === 0" class="text-center py-8">
-                <p class="text-xl text-gray-500">No products found. Try a different category or search term.</p>
-              </div>
-              
-              <!-- Products Grid -->
-              <div v-else class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-                <div 
-                  v-for="product in filteredProducts" 
-                  :key="product.productId"
-                  @click="addToCart(product)"
-                  class="bg-white rounded-lg shadow-md p-4 cursor-pointer transition-transform duration-300 ease-in-out transform hover:-translate-y-1 hover:shadow-lg"
-                >
-                  <div class="bg-gray-200 rounded-lg mb-4 p-3 flex items-center justify-center">
-                    <span class="text-4xl text-gray-400">{{ getCategoryIcon(product.categoryId) }}</span>
-                  </div>
-                  <h4 class="text-lg font-semibold mb-2 truncate">{{ product.name }}</h4>
-                  <p class="text-blue-500 text-xl font-bold mb-2">${{ product.price.toFixed(2) }}</p>
-                  <p class="text-sm text-gray-500">Stock: {{ product.stockQuantity }}</p>
+                <div class="bg-gray-200 rounded-lg mb-4 p-4 flex items-center justify-center">
+                  <span class="text-4xl text-gray-400">Product Image</span>
                 </div>
+                <h4 class="text-xl font-semibold mb-2 truncate">{{ product.name }}</h4>
+                <p class="text-blue-500 text-2xl font-bold mb-2">${{ product.price.toFixed(2) }}</p>
+                <p class="text-lg text-gray-500">Stock: {{ product.stockQuantity }}</p>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- Right Panel: Shopping Cart -->
-        <div class="lg:col-span-1">
-          <ShoppingCart 
-            :initial-items="cart" 
-            @update:items="updateCart" 
-            @checkout="handleCheckout"
-            @hold="handleHoldOrder"
-            @cancel="handleCancelOrder"
-          />
+        <!-- Right Panel: Current Order and Actions -->
+        <div class="w-full md:w-1/3 bg-white rounded-lg shadow-lg p-8">
+          <!-- Current Order -->
+          <div class="mb-8">
+            <div class="flex justify-between items-center mb-6">
+              <h3 class="text-2xl font-bold">Current Order</h3>
+              <button 
+                @click="clearCart" 
+                class="text-red-500 hover:text-red-600 text-lg focus:outline-none"
+                :disabled="cart.length === 0"
+              >
+                Clear All
+              </button>
+            </div>
+
+            <div class="max-h-96 overflow-y-auto mb-6">
+              <div v-if="cart.length === 0" class="text-center py-12 text-xl text-gray-500">
+                No items in cart
+              </div>
+              <div v-else>
+                <div 
+                  v-for="(item, index) in cart" 
+                  :key="index"
+                  class="flex justify-between items-center py-4 border-b-2 border-gray-200"
+                >
+                  <div>
+                    <p class="text-xl font-medium">{{ item.name }}</p>
+                    <div class="flex items-center mt-2">
+                      <button 
+                        @click="decrementQuantity(index)" 
+                        class="bg-gray-200 hover:bg-gray-300 px-3 py-1 rounded-l-lg text-xl focus:outline-none"
+                      >
+                        -
+                      </button>
+                      <span class="px-4 py-1 text-xl bg-gray-100">{{ item.quantity }}</span>
+                      <button 
+                        @click="incrementQuantity(index)" 
+                        class="bg-gray-200 hover:bg-gray-300 px-3 py-1 rounded-r-lg text-xl focus:outline-none"
+                      >
+                        +
+                      </button>
+                    </div>
+                  </div>
+                  <div class="text-right">
+                    <p class="text-xl font-semibold">${{ (item.price * item.quantity).toFixed(2) }}</p>
+                    <button 
+                      @click="removeFromCart(index)" 
+                      class="text-red-500 hover:text-red-600 text-lg mt-2 focus:outline-none"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Order Summary -->
+            <div class="border-t-4 border-gray-200 pt-4">
+              <div class="flex justify-between mb-2 text-xl">
+                <span>Subtotal</span>
+                <span>${{ subtotal.toFixed(2) }}</span>
+              </div>
+              <div class="flex justify-between mb-2 text-xl">
+                <span>Tax (10%)</span>
+                <span>${{ tax.toFixed(2) }}</span>
+              </div>
+              <div class="flex justify-between mb-2 text-xl">
+                <span>Discount</span>
+                <span>${{ discount.toFixed(2) }}</span>
+              </div>
+              <div class="flex justify-between text-3xl font-bold mt-4 pt-4 border-t-4 border-gray-200">
+                <span>Total</span>
+                <span>${{ total.toFixed(2) }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Payment Actions -->
+          <div>
+            <h3 class="text-2xl font-bold mb-4">Payment Options</h3>
+            <div class="grid grid-cols-2 gap-4 mb-6">
+              <button 
+                @click="processPayment('CASH')" 
+                class="bg-green-500 hover:bg-green-600 text-white text-xl font-semibold py-4 rounded-lg focus:outline-none"
+                :disabled="cart.length === 0"
+              >
+                Cash
+              </button>
+              <button 
+                @click="processPayment('CARD')" 
+                class="bg-blue-500 hover:bg-blue-600 text-white text-xl font-semibold py-4 rounded-lg focus:outline-none"
+                :disabled="cart.length === 0"
+              >
+                Card
+              </button>
+            </div>
+            <button 
+              @click="holdOrder" 
+              class="w-full bg-yellow-500 hover:bg-yellow-600 text-white text-xl font-semibold py-4 rounded-lg mb-4 focus:outline-none"
+              :disabled="cart.length === 0"
+            >
+              Hold Order
+            </button>
+            <button 
+              @click="cancelOrder" 
+              class="w-full bg-red-500 hover:bg-red-600 text-white text-xl font-semibold py-4 rounded-lg focus:outline-none"
+              :disabled="cart.length === 0"
+            >
+              Cancel Order
+            </button>
+          </div>
         </div>
       </div>
     </div>
   </div>
 </template>
-
 <script>
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { productService } from '@/services/api.service';
-import BarcodeScanner from '@/components/BarcodeScanner.vue';
-import ShoppingCart from '@/components/ShoppingCart.vue';
+import { productService, orderService, paymentService } from '@/services/api.service';
 
 export default {
-  components: {
-    BarcodeScanner,
-    ShoppingCart
-  },
-  
   setup() {
     const router = useRouter();
     const cart = ref([]);
     const products = ref([]);
-    const loading = ref(true);
-    const errorMessage = ref('');
-    
     const categories = ref([
       { id: 'all', name: 'All Products' },
       { id: 1, name: 'Electronics' },
@@ -125,76 +181,35 @@ export default {
       { id: 3, name: 'Home & Kitchen' },
       { id: 4, name: 'Books' }
     ]);
-    
     const activeCategory = ref('all');
     const searchQuery = ref('');
+    const taxRate = 0.10; // 10% tax
+    const discountAmount = ref(0);
 
     const fetchProducts = async () => {
-      loading.value = true;
-      errorMessage.value = '';
-      
       try {
-        console.log('Fetching products from API...');
         const response = await productService.getAllProducts();
-        
-        // Check if the response has data
-        if (response && response.data && response.data.length > 0) {
-          console.log(`Successfully loaded ${response.data.length} products from API`);
-          products.value = response.data;
-        } else {
-          console.log('API returned empty data, using sample products');
-          useSampleProducts();
-        }
+        products.value = response.data || [];
+        console.log('Products loaded:', products.value);
       } catch (error) {
         console.error('Error fetching products:', error);
-        
-        // Determine if it's a connection error
-        if (error.message && error.message.includes('Network Error')) {
-          errorMessage.value = 'Could not connect to the server. Please check your connection.';
-        } else {
-          errorMessage.value = 'Failed to load products. Using sample data instead.';
-          useSampleProducts();
-        }
-      } finally {
-        loading.value = false;
+        // For demo purposes, let's add some sample products if the API fails
+        products.value = [
+          { productId: 1, name: 'Laptop', price: 999.99, categoryId: 1, stockQuantity: 10, barcode: '123456789' },
+          { productId: 2, name: 'Smartphone', price: 499.99, categoryId: 1, stockQuantity: 15, barcode: '234567890' },
+          { productId: 3, name: 'T-Shirt', price: 19.99, categoryId: 2, stockQuantity: 50, barcode: '345678901' },
+          { productId: 4, name: 'Coffee Maker', price: 89.99, categoryId: 3, stockQuantity: 8, barcode: '456789012' },
+          { productId: 5, name: 'Novel', price: 12.99, categoryId: 4, stockQuantity: 30, barcode: '567890123' }
+        ];
       }
     };
 
-    // Function to load sample products (moved to a separate function)
-    const useSampleProducts = () => {
-      console.log('Loading sample products...');
-      products.value = [
-        { productId: 1, name: 'Laptop', price: 999.99, categoryId: 1, stockQuantity: 10, barcode: '123456789' },
-        { productId: 2, name: 'Smartphone', price: 499.99, categoryId: 1, stockQuantity: 15, barcode: '234567890' },
-        { productId: 3, name: 'T-Shirt', price: 19.99, categoryId: 2, stockQuantity: 50, barcode: '345678901' },
-        { productId: 4, name: 'Coffee Maker', price: 89.99, categoryId: 3, stockQuantity: 8, barcode: '456789012' },
-        { productId: 5, name: 'Novel', price: 12.99, categoryId: 4, stockQuantity: 30, barcode: '567890123' },
-        { productId: 6, name: 'Headphones', price: 159.99, categoryId: 1, stockQuantity: 12, barcode: '678901234' },
-        { productId: 7, name: 'Jeans', price: 45.99, categoryId: 2, stockQuantity: 25, barcode: '789012345' },
-        { productId: 8, name: 'Blender', price: 69.99, categoryId: 3, stockQuantity: 10, barcode: '890123456' },
-        { productId: 9, name: 'Cookbook', price: 24.99, categoryId: 4, stockQuantity: 15, barcode: '901234567' }
-      ];
-      console.log(`Loaded ${products.value.length} sample products`);
-    };
-
-    // Watch for changes in the selected category
-    watch(activeCategory, (newCategory) => {
-      console.log(`Category changed to: ${newCategory}`);
-    });
-
     const filteredProducts = computed(() => {
-      console.log(`Computing filtered products. Category: ${activeCategory.value}, Search: "${searchQuery.value}", Total Products: ${products.value.length}`);
-      
       let result = products.value;
       
       // Filter by category
       if (activeCategory.value !== 'all') {
-        const categoryId = typeof activeCategory.value === 'string' 
-          ? parseInt(activeCategory.value) 
-          : activeCategory.value;
-          
-        result = result.filter(product => product.categoryId === categoryId);
-        console.log(`After category filter: ${result.length} products`);
+        result = result.filter(product => product.categoryId === activeCategory.value);
       }
       
       // Filter by search query
@@ -202,96 +217,137 @@ export default {
         const query = searchQuery.value.toLowerCase();
         result = result.filter(product => 
           product.name.toLowerCase().includes(query) || 
-          (product.barcode && product.barcode.includes(query))
+          product.barcode.includes(query)
         );
-        console.log(`After search filter: ${result.length} products`);
       }
       
       return result;
     });
 
-    // Get the appropriate icon for each category
-    const getCategoryIcon = (categoryId) => {
-      switch (categoryId) {
-        case 1: return '📱'; // Electronics
-        case 2: return '👚'; // Clothing
-        case 3: return '🏠'; // Home & Kitchen
-        case 4: return '📚'; // Books
-        default: return '📦'; // Default
-      }
-    };
-
     const addToCart = (product) => {
-      console.log(`Adding product to cart: ${product.name}`);
       const existingItem = cart.value.find(item => item.productId === product.productId);
       
       if (existingItem) {
         existingItem.quantity += 1;
-        console.log(`Increased quantity for ${product.name} to ${existingItem.quantity}`);
       } else {
         cart.value.push({
           ...product,
           quantity: 1
         });
-        console.log(`Added new product to cart: ${product.name}`);
       }
       
       // Save cart to localStorage
       localStorage.setItem('cart', JSON.stringify(cart.value));
     };
 
-    // Update cart from ShoppingCart component
-    const updateCart = (newCart) => {
-      cart.value = newCart;
-      console.log('Cart updated, new count:', cart.value.length);
+    const removeFromCart = (index) => {
+      cart.value.splice(index, 1);
+      localStorage.setItem('cart', JSON.stringify(cart.value));
     };
 
-    // Handle checkout from shopping cart
-    const handleCheckout = (data) => {
-      console.log('Checkout initiated with data:', data);
-      
-      // Store order in localStorage
-      localStorage.setItem('order', JSON.stringify(data.orderData));
-      
-      // Navigate to payment page
-      router.push('/payment');
+    const incrementQuantity = (index) => {
+      cart.value[index].quantity += 1;
+      localStorage.setItem('cart', JSON.stringify(cart.value));
     };
 
-    // Handle product found from barcode scanner
-    const handleProductFound = (product) => {
-      console.log('Product found from barcode scanner:', product);
-      // You can do additional processing here if needed
+    const decrementQuantity = (index) => {
+      if (cart.value[index].quantity > 1) {
+        cart.value[index].quantity -= 1;
+      } else {
+        removeFromCart(index);
+      }
+      localStorage.setItem('cart', JSON.stringify(cart.value));
     };
 
-    // Handle hold order
-    const handleHoldOrder = (items) => {
-      console.log('Order held with items:', items);
-      // In a real implementation, you would save this to a database
-      alert('Order has been put on hold.');
-    };
-
-    // Handle cancel order
-    const handleCancelOrder = () => {
-      console.log('Order cancelled');
+    const clearCart = () => {
       cart.value = [];
       localStorage.removeItem('cart');
     };
 
+    const subtotal = computed(() => {
+      return cart.value.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    });
+
+    const tax = computed(() => {
+      return subtotal.value * taxRate;
+    });
+
+    const discount = computed(() => {
+      return discountAmount.value;
+    });
+
+    const total = computed(() => {
+      return subtotal.value + tax.value - discount.value;
+    });
+
+    const processPayment = async (paymentMethod) => {
+      if (cart.value.length === 0) return;
+
+      const orderData = {
+        customerId: 1, // Replace with actual customer ID
+        totalAmount: subtotal.value,
+        taxAmount: tax.value,
+        discountAmount: discount.value,
+        finalAmount: total.value,
+        orderType: "IN_STORE",
+        paymentStatus: "PENDING",
+        orderItems: cart.value.map(item => ({
+          productId: item.productId,
+          quantity: item.quantity,
+          price: item.price,
+          subtotal: item.price * item.quantity
+        }))
+      };
+
+      try {
+        // Create order
+        const orderResponse = await orderService.createOrder(orderData);
+        const order = orderResponse.data;
+        console.log('Order created:', order);
+
+        // Process payment
+        const paymentData = {
+          transactionId: generateTransactionId(),
+          orderId: order.orderId,
+          amount: total.value,
+          paymentMethod: paymentMethod,
+          paymentType: paymentMethod === 'CARD' ? 'CARD' : 'CASH'
+        };
+
+        const paymentResponse = await paymentService.processPayment(paymentData);
+        console.log('Payment processed:', paymentResponse.data);
+
+        // Clear cart and show success
+        clearCart();
+        alert(`Payment successful! Order #${order.orderId} completed.`);
+      } catch (error) {
+        console.error('Error processing order:', error);
+        alert('There was an error processing your order. Please try again.');
+      }
+    };
+
+    const generateTransactionId = () => {
+      return 'TXN' + Date.now().toString();
+    };
+
+    const holdOrder = () => {
+      if (cart.value.length === 0) return;
+      alert('Order has been put on hold.');
+    };
+
+    const cancelOrder = () => {
+      if (cart.value.length === 0) return;
+      if (confirm('Are you sure you want to cancel this order?')) {
+        clearCart();
+      }
+    };
+
     onMounted(() => {
-      console.log('POSDashboard component mounted');
-      
-      // Fetch products
       fetchProducts();
-      
       // Load cart from localStorage if available
       const savedCart = localStorage.getItem('cart');
       if (savedCart) {
-        try {
-          cart.value = JSON.parse(savedCart);
-          console.log(`Loaded ${cart.value.length} items from saved cart`);
-        } catch (error) {
-          console.error('Error parsing saved cart:', error);
-        }
+        cart.value = JSON.parse(savedCart);
       }
     });
 
@@ -301,17 +357,19 @@ export default {
       activeCategory,
       searchQuery,
       cart,
-      loading,
-      errorMessage,
       filteredProducts,
       addToCart,
-      updateCart,
-      handleCheckout,
-      handleProductFound,
-      handleHoldOrder,
-      handleCancelOrder,
-      fetchProducts,
-      getCategoryIcon
+      removeFromCart,
+      incrementQuantity,
+      decrementQuantity,
+      clearCart,
+      subtotal,
+      tax,
+      discount,
+      total,
+      processPayment,
+      holdOrder,
+      cancelOrder
     };
   }
 };
