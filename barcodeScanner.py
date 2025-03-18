@@ -3,6 +3,7 @@ import cv2
 from pyzbar.pyzbar import decode
 import threading
 import requests
+import numpy
 import atexit
 import time
 import logging
@@ -196,7 +197,7 @@ def generate_frames():
 @app.route('/')
 def index():
     """Render the main page that displays the video stream."""
-    return render_template('live.html')  # Change 'index.html' to 'live.html'
+    return render_template('http://localhost:5001/video_feed')  # Change 'index.html' to 'live.html'
 
 @app.route('/video_feed')
 def video_feed():

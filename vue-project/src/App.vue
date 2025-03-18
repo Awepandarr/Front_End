@@ -9,7 +9,6 @@
 import { computed } from 'vue';
 import { useRoute } from 'vue-router';
 import MainLayout from '@/components/MainLayout.vue';
-
 export default {
   components: {
     MainLayout

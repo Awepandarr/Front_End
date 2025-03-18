@@ -1,7 +1,6 @@
 // src/services/api.service.js
 
 import axios from 'axios';
-
 // Create an Axios instance with default config
 const apiClient = axios.create({
   baseURL: 'http://localhost:8080',
@@ -136,4 +135,5 @@ export default {
   paymentService,
   reportService,
   invoiceService
+
 };

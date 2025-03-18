@@ -4,7 +4,7 @@ import axios from 'axios';
 
 // Create an Axios instance with default config for the barcode scanner API
 const barcodeApiClient = axios.create({
-  baseURL: 'http://localhost:5001',
+  baseURL: 'http://localhost:5173',
   headers: {
     'Content-Type': 'application/json'
   },

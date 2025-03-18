@@ -85,7 +85,7 @@
       // Set the video feed URL
       const setVideoUrl = () => {
         // This URL should point to the video feed endpoint in your Python app
-        videoUrl.value = 'http://localhost:5001/video_feed';
+        videoUrl.value = 'http://localhost:5173/video_feed';
       };
       
       // Handle video loading error
