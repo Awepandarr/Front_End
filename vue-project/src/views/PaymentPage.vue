@@ -2,6 +2,7 @@
   <div class="bg-gray-100 min-h-screen py-12">
     <div class="container mx-auto px-4">
       <div class="max-w-2xl mx-auto bg-white shadow-lg rounded-lg overflow-hidden">
+        
         <!-- Header -->
         <div class="bg-blue-600 text-white p-6">
           <h1 class="text-2xl font-bold">Complete Your Payment</h1>
@@ -20,12 +21,12 @@
           </div>
         </div>
 
-        <!-- Error & Loading States -->
+        <!-- Error Message -->
         <div v-if="errorMessage" class="bg-red-100 p-4 text-red-800">
           {{ errorMessage }}
         </div>
 
-        <!-- Debug Info (Remove in production) -->
+        <!-- Debug Info (remove in production) -->
         <div class="p-4 bg-gray-50 border-b">
           <details>
             <summary class="cursor-pointer text-gray-700">Debug Information</summary>
@@ -61,7 +62,7 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { paymentService, invoiceService } from '@/services/api.service';
+import { paymentService } from '@/services/api.service';
 import PaymentForm from '@/components/PaymentForm.vue';
 
 const router = useRouter();
@@ -69,114 +70,96 @@ const order = ref(null);
 const errorMessage = ref('');
 
 onMounted(() => {
-  // Load order from localStorage
   const savedOrder = localStorage.getItem('order');
   if (savedOrder) {
     try {
-      order.value = JSON.parse(savedOrder);
-      console.log('Order loaded successfully:', order.value);
-      
-      // Verify order has all required fields
-      if (!order.value.orderId) {
-        console.warn('Loaded order is missing orderId');
+      const parsed = JSON.parse(savedOrder);
+      console.log('Loaded order:', parsed);
+
+      // Type check
+      if (!parsed.orderId || typeof parsed.finalAmount !== 'number') {
+        throw new Error('Invalid order format.');
       }
-      if (typeof order.value.finalAmount !== 'number') {
-        console.warn('Order finalAmount is not a number:', order.value.finalAmount);
-        // Try to fix it
-        order.value.finalAmount = parseFloat(order.value.finalAmount) || 0;
-      }
-    } catch (error) {
-      console.error('Error parsing order:', error);
-      errorMessage.value = 'Unable to load order details. Please try again.';
+
+      order.value = parsed;
+    } catch (err) {
+      console.error('Error loading order:', err);
+      errorMessage.value = 'Could not load your order. Please return to the cart.';
     }
   } else {
     errorMessage.value = 'No order found. Please create an order first.';
   }
 });
 
-// Emergency bypass function for testing
+const handlePaymentSuccess = async (paymentInfo) => {
+  try {
+    if (!order.value) {
+      throw new Error('Missing order information.');
+    }
+
+    const paymentRequest = {
+      transactionId: paymentInfo.transactionId,
+      orderId: order.value.orderId,
+      amount: order.value.finalAmount,
+      paymentMethod: paymentInfo.method,
+    };
+
+    if (paymentInfo.method === 'CARD' && paymentInfo.cardDetails) {
+      paymentRequest.cardDetails = paymentInfo.cardDetails;
+    }
+
+    console.log('Sending payment request:', {
+      ...paymentRequest,
+      cardDetails: paymentRequest.cardDetails ? '(hidden)' : undefined
+    });
+
+    const response = await paymentService.processPayment(paymentRequest);
+    console.log('Payment response:', response.data);
+
+    // Cleanup and redirect
+    localStorage.removeItem('order');
+    localStorage.removeItem('cart');
+
+    router.push({
+      path: '/confirmation',
+      query: {
+        transactionId: response.data.transactionId,
+        amount: response.data.amount,
+        method: response.data.paymentMethod
+      }
+    });
+
+  } catch (error) {
+    console.error('handlePaymentSuccess error:', error);
+    if (import.meta.env.MODE !== 'production') {
+      console.warn('Dev mode: falling back to emergency bypass');
+      emergencyBypass();
+    } else {
+      errorMessage.value = error.message || 'Payment failed. Please try again.';
+    }
+  }
+};
+
+const handlePaymentError = (error) => {
+  console.error('Payment error:', error);
+  errorMessage.value = error.message || 'Payment processing failed. Please try again.';
+};
+
 const emergencyBypass = () => {
-  console.log('EMERGENCY: Bypassing payment and invoice process');
-  
-  // Generate fake transaction data
+  console.warn('Emergency bypass activated');
+
   const emergency = {
     transactionId: 'EMERGENCY' + Date.now(),
     amount: order.value?.finalAmount || 0,
     method: 'EMERGENCY'
   };
-  
-  // Clear localStorage
+
   localStorage.removeItem('order');
   localStorage.removeItem('cart');
-  
-  // Navigate directly to confirmation
+
   router.push({
     path: '/confirmation',
     query: emergency
   });
-};
-
-// Updated handlePaymentSuccess function
-const handlePaymentSuccess = async (paymentInfo) => {
-  try {
-    // Log what we're doing
-    console.log('Payment success, proceeding with:', paymentInfo);
-    
-    // Create payment request object that matches backend expectations
-    const paymentRequest = {
-      transactionId: paymentInfo.transactionId,
-      orderId: order.value.orderId,
-      amount: order.value.finalAmount,
-      paymentMethod: paymentInfo.method
-    };
-    
-    // Add card details if this is a card payment
-    if (paymentInfo.method === 'CARD' && paymentInfo.cardDetails) {
-      paymentRequest.cardDetails = paymentInfo.cardDetails;
-    }
-    
-    console.log('Submitting payment to API:', {
-      ...paymentRequest,
-      cardDetails: paymentRequest.cardDetails ? '(hidden for security)' : undefined
-    });
-    
-    try {
-      // Process payment through API
-      const paymentResponse = await paymentService.processPayment(paymentRequest);
-      console.log('Payment API response:', paymentResponse.data);
-      
-      // Payment succeeded - clear storage and navigate to confirmation
-      localStorage.removeItem('order');
-      localStorage.removeItem('cart');
-      
-      // Navigate to confirmation page
-      router.push({
-        path: '/confirmation',
-        query: {
-          transactionId: paymentResponse.data.transactionId,
-          amount: paymentResponse.data.amount,
-          method: paymentResponse.data.paymentMethod
-        }
-      });
-    } catch (apiError) {
-      console.error('Payment API error:', apiError);
-      
-      // For development/testing - use emergency bypass if API fails
-      if (process.env.NODE_ENV !== 'production') {
-        console.warn('Development mode: Continuing to confirmation despite API error');
-        emergencyBypass();
-      } else {
-        throw new Error(apiError.response?.data?.message || 'Payment processing failed');
-      }
-    }
-  } catch (error) {
-    console.error('Error in handlePaymentSuccess:', error);
-    errorMessage.value = error.message || 'Error completing payment. Please try again.';
-  }
-};
-
-const handlePaymentError = (error) => {
-  console.error('Payment error received:', error);
-  errorMessage.value = error.message || 'Payment processing failed. Please try again.';
 };
 </script>

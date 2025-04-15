@@ -77,7 +77,8 @@
                 <div class="h-8 w-8 rounded-full bg-blue-400 flex items-center justify-center">
                   <span class="text-lg font-semibold text-white">{{ userInitials }}</span>
                 </div>
-                <span class="hidden sm:inline-block text-sm font-medium">{{ user.name }}</span>
+                <span class="hidden sm:inline-block text-sm font-medium">{{ currentUser.name }}</span>
+                <span class="hidden sm:inline-block text-xs font-medium bg-blue-700 px-2 py-1 rounded-full">{{ currentUser.role }}</span>
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                 </svg>
@@ -149,6 +150,7 @@
               </router-link>
               
               <router-link 
+                v-if="hasRole('admin')"
                 to="/customers" 
                 class="flex items-center px-4 py-2 rounded-md hover:bg-gray-700 focus:outline-none focus:bg-gray-700"
                 :class="{ 'bg-gray-700': $route.path === '/customers' }"
@@ -160,6 +162,7 @@
               </router-link>
               
               <router-link 
+                v-if="hasRole('admin')"
                 to="/products" 
                 class="flex items-center px-4 py-2 rounded-md hover:bg-gray-700 focus:outline-none focus:bg-gray-700"
                 :class="{ 'bg-gray-700': $route.path === '/products' }"
@@ -182,6 +185,7 @@
               </router-link>
               
               <router-link 
+                v-if="hasRole('admin')"
                 to="/reports" 
                 class="flex items-center px-4 py-2 rounded-md hover:bg-gray-700 focus:outline-none focus:bg-gray-700"
                 :class="{ 'bg-gray-700': $route.path === '/reports' }"
@@ -211,134 +215,133 @@
   </div>
 </template>
   
-  <script>
-  import { ref, computed, onMounted, onUnmounted } from 'vue';
-  import { useRoute } from 'vue-router';
-  
-  export default {
-    setup() {
-      const route = useRoute();
-      
-      // User information
-      const user = ref({
+<script>
+import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import { useAuth } from '@/services/auth.service';
+
+export default {
+  setup() {
+    const route = useRoute();
+    const router = useRouter();
+    const { user: currentUser, logout: signOut, hasRole } = useAuth();
+    
+    // Sidebar state
+    const sidebarOpen = ref(window.innerWidth >= 1024); // Default open on large screens
+    
+    const toggleSidebar = () => {
+      sidebarOpen.value = !sidebarOpen.value;
+    };
+    
+    // User dropdown menu
+    const showUserMenu = ref(false);
+    const userDropdown = ref(null);
+    
+    const toggleUserMenu = () => {
+      showUserMenu.value = !showUserMenu.value;
+      if (showUserMenu.value) {
+        showNotifications.value = false;
+      }
+    };
+    
+    // Notifications
+    const notifications = ref([
+      {
         id: 1,
-        name: 'John Doe',
-        email: 'john@example.com',
-        role: 'Admin'
-      });
+        title: 'Low Stock Alert',
+        message: 'Product "Laptop" is running low on stock (2 remaining).',
+        time: '5 minutes ago',
+        read: false
+      },
+      {
+        id: 2,
+        title: 'New Order',
+        message: 'Order #1234 has been placed successfully.',
+        time: '1 hour ago',
+        read: false
+      }
+    ]);
+    
+    const showNotifications = ref(false);
+    const notificationDropdown = ref(null);
+    
+    const toggleNotifications = () => {
+      showNotifications.value = !showNotifications.value;
+      if (showNotifications.value) {
+        showUserMenu.value = false;
+      }
+    };
+    
+    // Handle clicks outside dropdowns
+    const handleClickOutside = (event) => {
+      if (
+        userDropdown.value && 
+        !userDropdown.value.contains(event.target) && 
+        showUserMenu.value
+      ) {
+        showUserMenu.value = false;
+      }
       
-      const userInitials = computed(() => {
-        return user.value.name
-          .split(' ')
-          .map(n => n[0])
-          .join('')
-          .toUpperCase();
-      });
-      
-      // Sidebar state
-      const sidebarOpen = ref(window.innerWidth >= 1024); // Default open on large screens
-      
-      const toggleSidebar = () => {
-        sidebarOpen.value = !sidebarOpen.value;
-      };
-      
-      // User dropdown menu
-      const showUserMenu = ref(false);
-      const userDropdown = ref(null);
-      
-      const toggleUserMenu = () => {
-        showUserMenu.value = !showUserMenu.value;
-        if (showUserMenu.value) {
-          showNotifications.value = false;
-        }
-      };
-      
-      // Notifications
-      const notifications = ref([
-        {
-          id: 1,
-          title: 'Low Stock Alert',
-          message: 'Product "Laptop" is running low on stock (2 remaining).',
-          time: '5 minutes ago',
-          read: false
-        },
-        {
-          id: 2,
-          title: 'New Order',
-          message: 'Order #1234 has been placed successfully.',
-          time: '1 hour ago',
-          read: false
-        }
-      ]);
-      
-      const showNotifications = ref(false);
-      const notificationDropdown = ref(null);
-      
-      const toggleNotifications = () => {
-        showNotifications.value = !showNotifications.value;
-        if (showNotifications.value) {
-          showUserMenu.value = false;
-        }
-      };
-      
-      // Handle clicks outside dropdowns
-      const handleClickOutside = (event) => {
-        if (
-          userDropdown.value && 
-          !userDropdown.value.contains(event.target) && 
-          showUserMenu.value
-        ) {
-          showUserMenu.value = false;
-        }
-        
-        if (
-          notificationDropdown.value && 
-          !notificationDropdown.value.contains(event.target) && 
-          showNotifications.value
-        ) {
-          showNotifications.value = false;
-        }
-      };
-      
-      // Handle window resize for responsive sidebar
-      const handleResize = () => {
-        if (window.innerWidth >= 1024) {
-          sidebarOpen.value = true;
-        } else {
-          sidebarOpen.value = false;
-        }
-      };
-      
-      // Logout function
-      const logout = () => {
-        // In a real app, you would perform logout logic here
-        alert('Logout functionality would be implemented here');
-      };
-      
-      onMounted(() => {
-        document.addEventListener('click', handleClickOutside);
-        window.addEventListener('resize', handleResize);
-      });
-      
-      onUnmounted(() => {
-        document.removeEventListener('click', handleClickOutside);
-        window.removeEventListener('resize', handleResize);
-      });
-      
-      return {
-        user,
-        userInitials,
-        sidebarOpen,
-        toggleSidebar,
-        showUserMenu,
-        userDropdown,
-        toggleUserMenu,
-        notifications,
-        showNotifications,
-        notificationDropdown,
-        toggleNotifications,
-        logout
-      };
-    }
-  };
-  </script>
+      if (
+        notificationDropdown.value && 
+        !notificationDropdown.value.contains(event.target) && 
+        showNotifications.value
+      ) {
+        showNotifications.value = false;
+      }
+    };
+    
+    // Handle window resize for responsive sidebar
+    const handleResize = () => {
+      if (window.innerWidth >= 1024) {
+        sidebarOpen.value = true;
+      } else {
+        sidebarOpen.value = false;
+      }
+    };
+    
+    // User initials for avatar
+    const userInitials = computed(() => {
+      if (!currentUser.value || !currentUser.value.name) return 'NA';
+      return currentUser.value.name
+        .split(' ')
+        .map(n => n[0])
+        .join('')
+        .toUpperCase()
+        .substring(0, 2);
+    });
+    
+    // Logout function
+    const logout = () => {
+      signOut();
+      router.push('/login');
+    };
+    
+    onMounted(() => {
+      document.addEventListener('click', handleClickOutside);
+      window.addEventListener('resize', handleResize);
+    });
+    
+    onUnmounted(() => {
+      document.removeEventListener('click', handleClickOutside);
+      window.removeEventListener('resize', handleResize);
+    });
+    
+    return {
+      currentUser,
+      userInitials,
+      sidebarOpen,
+      toggleSidebar,
+      showUserMenu,
+      userDropdown,
+      toggleUserMenu,
+      notifications,
+      showNotifications,
+      notificationDropdown,
+      toggleNotifications,
+      hasRole,
+      logout
+    };
+  }
+};
+</script>
