@@ -1,9 +1,11 @@
-// src/services/invoice.service.js
 import axios from 'axios';
 
-// Create axios instance with default config
-const apiClient = axios.create({
-  baseURL: 'http://localhost:8080',
+// Define API base URL - adjust if you're using a different base URL
+const API_URL = process.env.VUE_APP_API_URL || '';
+
+// Create a dedicated API client for invoice service
+const invoiceApiClient = axios.create({
+  baseURL: API_URL,
   headers: {
     'Content-Type': 'application/json'
   },
@@ -11,43 +13,62 @@ const apiClient = axios.create({
 });
 
 export const invoiceService = {
-  // Generate invoice
-  generateInvoice(invoiceData) {
-    // Ensure all required fields are present and in correct format
-    const processedData = {
-      orderId: invoiceData.orderId,
-      customerId: invoiceData.customerId || 1,
-      invoiceDate: invoiceData.invoiceDate || new Date().toISOString(),
-      subtotal: invoiceData.subtotal.toString(),
-      discount: (invoiceData.discount || 0).toString(),
-      taxAmount: (invoiceData.taxAmount || 0).toString(),
-      serviceCharge: (invoiceData.serviceCharge || 0).toString(),
-      finalAmount: invoiceData.finalAmount.toString()
-    };
-    
-    console.log('Sending invoice data:', processedData);
-    
-    return apiClient.post('/invoice', processedData);
+  /**
+   * Create a new invoice directly
+   * @param {Object} invoiceData - The invoice data
+   * @returns {Promise} - The API response
+   */
+  createInvoice(invoiceData) {
+    return invoiceApiClient.post('/invoice', invoiceData);
   },
   
-  // Get invoice by ID
+  /**
+   * Create an invoice from an existing payment transaction
+   * @param {String} transactionId - The payment transaction ID
+   * @returns {Promise} - The API response
+   */
+  createInvoiceFromPayment(transactionId) {
+    return invoiceApiClient.post(`/invoice/fromPayment/${transactionId}`);
+  },
+  
+  /**
+   * Get an invoice by ID
+   * @param {Number} invoiceId - The invoice ID
+   * @returns {Promise} - The API response
+   */
   getInvoiceById(invoiceId) {
-    return apiClient.get(`/invoice/${invoiceId}`);
+    return invoiceApiClient.get(`/invoice/${invoiceId}`);
   },
   
-  // Print or download invoice
-  downloadInvoice(invoiceId) {
-    return apiClient.get(`/invoice/${invoiceId}/download`, {
+  /**
+   * Get all invoices for today (for end-of-day reporting)
+   * @returns {Promise} - The API response
+   */
+  getTodayInvoices() {
+    return invoiceApiClient.get('/invoices/today');
+  },
+  
+  /**
+   * Generate a PDF version of an invoice
+   * @param {Number} invoiceId - The invoice ID
+   * @returns {Promise} - The API response with PDF data
+   */
+  generateInvoicePDF(invoiceId) {
+    return invoiceApiClient.get(`/invoice/${invoiceId}/pdf`, {
       responseType: 'blob'
     });
   },
   
-  // Email invoice
+  /**
+   * Email an invoice to a customer
+   * @param {Number} invoiceId - The invoice ID
+   * @param {String} email - The customer's email address
+   * @returns {Promise} - The API response
+   */
   emailInvoice(invoiceId, email) {
-    return apiClient.post(`/invoice/${invoiceId}/email`, { email });
+    return invoiceApiClient.post(`/invoice/${invoiceId}/email`, { email });
   }
 };
 
-export default {
-  invoiceService
-};
+// Export the service as default export
+export default invoiceService;

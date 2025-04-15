@@ -1,159 +1,208 @@
-<!-- src/views/POSDashboard.vue -->
 <template>
-  <div class="bg-gray-100 min-h-screen">
-    <div class="container mx-auto px-6 py-8">
-      <div class="flex flex-col gap-8">
-        <!-- Barcode Scanner Section -->
-        <div class="bg-white rounded-lg shadow-lg overflow-hidden">
-          <div class="p-4 bg-gray-800 text-white flex justify-between items-center">
-            <h3 class="text-lg font-semibold">Barcode Scanner</h3>
-            <div 
-              class="px-2 py-1 rounded-full text-xs font-medium" 
-              :class="scannerConnected ? 'bg-green-500' : 'bg-red-500'"
-            >
-              {{ scannerConnected ? 'Connected' : 'Disconnected' }}
-            </div>
+  <div class="min-h-screen bg-gradient-to-b from-blue-50 to-white">
+    <div class="container mx-auto px-4 py-6">
+      <!-- Header Section -->
+      <header class="mb-8">
+        <div class="flex justify-between items-center">
+          <h1 class="text-3xl font-bold text-gray-800">POS Dashboard</h1>
+          <div class="flex items-center gap-3">
+            <span class="text-sm text-gray-500">Monday, March 24, 2025</span>
+            <span class="h-6 w-px bg-gray-300"></span>
+            <button class="flex items-center gap-2 text-gray-600 hover:text-blue-600 transition">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+              <span>Settings</span>
+            </button>
           </div>
-          
-          <div class="p-4">
-            <!-- Video feed or manual entry form -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <!-- Left side: Video feed (if available) or placeholder -->
-              <div class="relative">
-                <div v-if="scannerConnected" class="relative">
-                  <!-- Video feed from scanner service -->
-                  <img 
-                    :src="videoFeedUrl" 
-                    alt="Barcode Scanner Feed" 
-                    class="w-full h-auto rounded border border-gray-300"
-                    @error="handleVideoError"
-                  />
-                  
-                  <!-- Scanning guide overlay -->
-                  <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
-                    <div class="border-2 border-red-500 w-3/4 h-1/2 max-w-md flex items-center justify-center">
-                      <div class="text-xs text-white bg-black bg-opacity-50 px-2 py-1 rounded">
-                        Position barcode here
-                      </div>
+        </div>
+      </header>
+
+      <!-- Barcode Scanner Section -->
+      <div class="bg-white rounded-xl shadow-lg overflow-hidden mb-8 border border-gray-100 transform transition hover:shadow-xl">
+        <div class="p-4 bg-gradient-to-r from-blue-600 to-blue-800 text-white flex justify-between items-center">
+          <h3 class="text-lg font-semibold flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
+            </svg>
+            Barcode Scanner
+          </h3>
+          <div 
+            class="px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1" 
+            :class="scannerConnected ? 'bg-green-500' : 'bg-red-500'"
+          >
+            <span class="h-2 w-2 rounded-full bg-white animate-pulse"></span>
+            {{ scannerConnected ? 'Connected' : 'Disconnected' }}
+          </div>
+        </div>
+        
+        <div class="p-6">
+          <!-- Video feed or manual entry form -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <!-- Left side: Video feed (if available) or placeholder -->
+            <div class="relative">
+              <div v-if="scannerConnected" class="relative">
+                <!-- Video feed from scanner service -->
+                <img 
+                  :src="videoFeedUrl" 
+                  alt="Barcode Scanner Feed" 
+                  class="w-full h-auto rounded-lg border border-gray-200 shadow-inner"
+                  @error="handleVideoError"
+                />
+                
+                <!-- Scanning guide overlay with animation -->
+                <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+                  <div class="border-2 border-red-500 w-3/4 h-1/2 max-w-md flex items-center justify-center relative">
+                    <div class="absolute inset-0 border-2 border-red-500 opacity-30 animate-pulse"></div>
+                    <div class="text-sm text-white bg-black bg-opacity-60 px-3 py-1 rounded-lg">
+                      Position barcode here
                     </div>
-                  </div>
-                </div>
-                
-                <div v-else class="bg-gray-100 p-8 text-center rounded">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto text-gray-400 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                  </svg>
-                  <p class="text-gray-600">
-                    Video feed not available.
-                    <button @click="connectScanner" class="text-blue-500 underline">Try connecting</button>
-                  </p>
-                </div>
-                
-                <!-- Latest scan results (if available) -->
-                <div v-if="lastScannedBarcode" class="mt-4 p-3 bg-blue-50 rounded border border-blue-200">
-                  <div class="font-semibold">Last Scan:</div>
-                  <div class="flex justify-between items-center">
-                    <div class="text-lg font-mono">{{ lastScannedBarcode.data }}</div>
-                    <div class="text-xs text-gray-500">{{ lastScannedBarcode.type }}</div>
                   </div>
                 </div>
               </div>
               
-              <!-- Right side: Manual barcode entry -->
-              <div>
-                <div class="relative mb-4">
-                  <input 
-                    type="text" 
-                    ref="barcodeInput"
-                    v-model="manualBarcodeValue" 
-                    placeholder="Scan or enter barcode" 
-                    class="w-full p-3 pl-10 border rounded-lg"
-                    @keyup.enter="searchByBarcode"
-                    @focus="inputFocused = true"
-                    @blur="inputFocused = false"
-                  >
-                  <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
-                    </svg>
-                  </div>
-                </div>
-                
-                <div class="flex space-x-2">
-                  <button 
-                    @click="searchByBarcode" 
-                    class="flex-1 bg-blue-500 text-white py-2 rounded-md hover:bg-blue-600 transition"
-                  >
-                    Search
-                  </button>
-                  <button 
-                    @click="clearBarcodeInput" 
-                    class="px-4 py-2 border rounded-md hover:bg-gray-100 transition"
-                  >
-                    Clear
-                  </button>
-                </div>
-                
-                <!-- Scanner Animation -->
-                <div 
-                  v-if="inputFocused" 
-                  class="mt-4 h-8 bg-gray-200 rounded-md overflow-hidden relative"
-                >
-                  <div 
-                    class="h-full bg-red-500 w-1 absolute animate-scanner"
-                  ></div>
-                </div>
-                
-                <!-- Recent Scans -->
-                <div v-if="recentScans.length > 0" class="mt-4">
-                  <h4 class="font-medium text-sm text-gray-500 mb-2">Recent Scans</h4>
-                  <div class="max-h-40 overflow-y-auto">
-                    <div 
-                      v-for="(scan, index) in recentScans" 
-                      :key="index"
-                      class="text-sm py-1 border-b last:border-0 flex justify-between items-center"
-                    >
-                      <div>
-                        <span class="font-medium">{{ scan.barcode }}</span>
-                        <p class="text-xs text-gray-500">{{ scan.timestamp }}</p>
-                      </div>
-                      <span 
-                        class="text-blue-500 cursor-pointer"
-                        @click="manualBarcodeValue = scan.barcode; searchByBarcode()"
-                      >
-                        Use
-                      </span>
-                    </div>
-                  </div>
+              <div v-else class="bg-gray-50 p-8 text-center rounded-lg border border-gray-200 flex flex-col items-center justify-center h-full min-h-[200px]">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto text-gray-300 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                <p class="text-gray-600 mb-4">
+                  Camera feed not available
+                </p>
+                <button @click="connectScanner" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition shadow-md flex items-center gap-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                  </svg>
+                  Connect Scanner
+                </button>
+              </div>
+              
+              <!-- Latest scan results (if available) -->
+              <div v-if="lastScannedBarcode" class="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200 shadow-sm">
+                <div class="font-semibold text-blue-800 mb-1">Last Scan:</div>
+                <div class="flex justify-between items-center">
+                  <div class="text-lg font-mono bg-white px-3 py-1 rounded border border-blue-100">{{ lastScannedBarcode.data }}</div>
+                  <div class="text-xs font-medium px-2 py-1 bg-blue-600 text-white rounded">{{ lastScannedBarcode.type }}</div>
                 </div>
               </div>
             </div>
             
-            <!-- Toggle Connection Button -->
-            <div class="mt-4">
-              <button 
-                @click="toggleScanner" 
-                class="w-full py-2 px-4 bg-blue-500 text-white rounded hover:bg-blue-600 transition"
+            <!-- Right side: Manual barcode entry -->
+            <div>
+              <div class="relative mb-6">
+                <input 
+                  type="text" 
+                  ref="barcodeInput"
+                  v-model="manualBarcodeValue" 
+                  placeholder="Scan or enter barcode" 
+                  class="w-full p-4 pl-12 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                  @keyup.enter="searchByBarcode"
+                  @focus="inputFocused = true"
+                  @blur="inputFocused = false"
+                >
+                <div class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
+                  </svg>
+                </div>
+              </div>
+              
+              <div class="flex space-x-3">
+                <button 
+                  @click="searchByBarcode" 
+                  class="flex-1 bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition shadow-md flex items-center justify-center gap-2"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                  Search
+                </button>
+                <button 
+                  @click="clearBarcodeInput" 
+                  class="px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition flex items-center justify-center"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              
+              <!-- Scanner Animation -->
+              <div 
+                v-if="inputFocused" 
+                class="mt-6 h-10 bg-gray-100 rounded-lg overflow-hidden relative"
               >
-                {{ scannerConnected ? 'Disconnect Scanner' : 'Connect Scanner' }}
-              </button>
+                <div 
+                  class="h-full bg-red-500 w-1 absolute animate-scanner"
+                  style="animation: scanner 1.5s infinite linear; box-shadow: 0 0 8px #ef4444;"
+                ></div>
+              </div>
+              
+              <!-- Recent Scans -->
+              <div v-if="recentScans.length > 0" class="mt-6">
+                <h4 class="font-medium text-sm text-gray-500 mb-3 flex items-center gap-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  Recent Scans
+                </h4>
+                <div class="max-h-48 overflow-y-auto pr-2 rounded-lg border border-gray-200 divide-y divide-gray-100 bg-white shadow-sm">
+                  <div 
+                    v-for="(scan, index) in recentScans" 
+                    :key="index"
+                    class="p-3 flex justify-between items-center hover:bg-gray-50 transition"
+                  >
+                    <div>
+                      <span class="font-medium text-gray-800">{{ scan.barcode }}</span>
+                      <p class="text-xs text-gray-500 mt-1">{{ scan.timestamp }}</p>
+                    </div>
+                    <span 
+                      class="text-blue-600 font-medium cursor-pointer hover:text-blue-800 transition px-3 py-1 rounded-full text-sm hover:bg-blue-50"
+                      @click="manualBarcodeValue = scan.barcode; searchByBarcode()"
+                    >
+                      Use
+                    </span>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
+          
+          <!-- Toggle Connection Button -->
+          <div class="mt-6">
+            <button 
+              @click="toggleScanner" 
+              class="w-full py-3 px-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition shadow-md flex items-center justify-center gap-2"
+            >
+              <svg v-if="scannerConnected" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+              </svg>
+              <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+              {{ scannerConnected ? 'Disconnect Scanner' : 'Connect Scanner' }}
+            </button>
+          </div>
         </div>
-
-        <!-- Main POS Section -->
-        <div class="flex flex-col md:flex-row gap-8">
-          <!-- Left Panel: Product Categories and List -->
-          <div class="w-full md:w-2/3 bg-white rounded-lg shadow-lg overflow-hidden">
-            <!-- Category Tabs -->
-            <div class="flex overflow-x-auto bg-blue-500">
+      </div>
+      
+      <!-- Main POS Section with repositioned cart -->
+      <div class="flex flex-col md:flex-row gap-8">
+        <!-- Left Panel: Product Categories and List -->
+        <div class="w-full md:w-2/3">
+          <!-- Category Tabs -->
+          <div class="bg-white rounded-xl shadow-lg overflow-hidden mb-8 border border-gray-100">
+            <div class="flex overflow-x-auto bg-gradient-to-r from-blue-600 to-blue-800 shadow-inner">
               <button 
                 v-for="category in categories" 
                 :key="category.id"
                 @click="activeCategory = category.id"
                 :class="[
-                  'px-6 py-4 text-lg font-medium whitespace-nowrap focus:outline-none',
-                  activeCategory === category.id ? 'bg-blue-600 text-white' : 'text-blue-100 hover:bg-blue-400 hover:text-white'
+                  'px-6 py-4 text-lg font-medium whitespace-nowrap focus:outline-none transition',
+                  activeCategory === category.id 
+                    ? 'bg-white text-blue-800 border-t-4 border-blue-600 -mt-1 rounded-t-lg shadow-sm' 
+                    : 'text-white hover:bg-blue-700 hover:text-white'
                 ]"
               >
                 {{ category.name }}
@@ -162,335 +211,553 @@
 
             <!-- Product Grid -->
             <div class="p-8">
-              <div class="mb-6">
+              <div class="mb-6 relative">
                 <input 
                   type="text" 
                   v-model="searchQuery" 
                   placeholder="Search products..." 
-                  class="w-full px-4 py-3 text-lg border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                  class="w-full px-5 py-4 pl-12 text-lg border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm transition"
                 >
+                <div class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </div>
               </div>
+              
               <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
                 <div 
                   v-for="product in filteredProducts" 
                   :key="product.productId"
                   @click="addToCart(product)"
-                  class="bg-white rounded-lg shadow-md p-6 cursor-pointer transition-transform duration-300 ease-in-out transform hover:-translate-y-1 hover:shadow-lg"
+                  class="bg-white rounded-xl shadow-md overflow-hidden cursor-pointer transition-transform duration-300 ease-in-out transform hover:-translate-y-2 hover:shadow-xl border border-gray-100"
                 >
-                  <div class="bg-gray-200 rounded-lg mb-4 p-4 flex items-center justify-center">
-                    <span class="text-4xl text-gray-400">Product Image</span>
+                  <!-- Product Image -->
+                  <div class="h-48 bg-gradient-to-br from-gray-50 to-gray-100 overflow-hidden relative">
+                    <img 
+                      v-if="product.image_url" 
+                      :src="product.image_url" 
+                      :alt="product.name"
+                      class="w-full h-full object-cover"
+                      @error="handleImageError($event, product)"
+                    />
+                    <div 
+                      v-else 
+                      class="h-full flex items-center justify-center bg-gray-100"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                    </div>
+                    <!-- Stock badge -->
+                    <div class="absolute top-3 right-3 px-2 py-1 bg-gray-800 bg-opacity-70 text-white text-xs font-medium rounded-lg">
+                      Stock: {{ product.stockQuantity }}
+                    </div>
                   </div>
-                  <h4 class="text-xl font-semibold mb-2 truncate">{{ product.name }}</h4>
-                  <p class="text-blue-500 text-2xl font-bold mb-2">${{ product.price.toFixed(2) }}</p>
-                  <p class="text-lg text-gray-500">Stock: {{ product.stockQuantity }}</p>
+                  
+                  <div class="p-5">
+                    <h4 class="text-xl font-semibold mb-2 text-gray-800 truncate">{{ product.name }}</h4>
+                    <p class="text-blue-600 text-2xl font-bold mb-1">${{ product.price.toFixed(2) }}</p>
+                    
+                    <!-- Add to cart button -->
+                    <button class="mt-2 w-full py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition text-sm font-medium flex items-center justify-center gap-1">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                      </svg>
+                      Add to Cart
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
+        </div>
 
-          <!-- Right Panel: Current Order and Actions -->
-          <div class="w-full md:w-1/3 bg-white rounded-lg shadow-lg p-8">
-            <!-- Current Order -->
-            <div class="mb-8">
-              <div class="flex justify-between items-center mb-6">
-                <h3 class="text-2xl font-bold">Current Order</h3>
-                <button 
-                  @click="clearCart" 
-                  class="text-red-500 hover:text-red-600 text-lg focus:outline-none"
-                  :disabled="cart.length === 0"
-                >
-                  Clear All
-                </button>
+        <!-- Right Panel: Current Order and Actions -->
+        <div class="w-full md:w-1/3">
+          <!-- Current Order -->
+          <div class="bg-white rounded-xl shadow-lg p-6 sticky top-8 border border-gray-100">
+            <div class="flex justify-between items-center mb-6">
+              <h3 class="text-2xl font-bold text-gray-800 flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+                Current Order
+              </h3>
+              <button 
+                @click="clearCart" 
+                class="text-red-500 hover:text-red-600 text-sm font-medium flex items-center gap-1 px-3 py-1 rounded-lg hover:bg-red-50 transition"
+                :disabled="cart.length === 0"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+                Clear All
+              </button>
+            </div>
+
+            <!-- Cart Items Section -->
+            <div class="max-h-[calc(100vh-500px)] overflow-y-auto mb-6 pr-1">
+              <div v-if="cart.length === 0" class="text-center py-16 px-8">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto text-gray-300 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+                <p class="text-xl text-gray-500">No items in cart</p>
+                <p class="text-sm text-gray-400 mt-2">Add items from the product list</p>
               </div>
-
-              <div class="max-h-96 overflow-y-auto mb-6">
-                <div v-if="cart.length === 0" class="text-center py-12 text-xl text-gray-500">
-                  No items in cart
-                </div>
-                <div v-else>
-                  <div 
-                    v-for="(item, index) in cart" 
-                    :key="index"
-                    class="flex justify-between items-center py-4 border-b-2 border-gray-200"
-                  >
-                    <div>
-                      <p class="text-xl font-medium">{{ item.name }}</p>
-                      <div class="flex items-center mt-2">
-                        <button 
-                          @click.stop="decrementQuantity(index)" 
-                          class="bg-gray-200 hover:bg-gray-300 px-3 py-1 rounded-l-lg text-xl focus:outline-none"
-                        >
-                          -
-                        </button>
-                        <span class="px-4 py-1 text-xl bg-gray-100">{{ item.quantity }}</span>
-                        <button 
-                          @click.stop="incrementQuantity(index)" 
-                          class="bg-gray-200 hover:bg-gray-300 px-3 py-1 rounded-r-lg text-xl focus:outline-none"
-                        >
-                          +
-                        </button>
-                      </div>
+              <div v-else>
+                <div 
+                  v-for="(item, index) in cart" 
+                  :key="index"
+                  class="flex items-center p-4 mb-3 rounded-lg border border-gray-100 hover:border-blue-100 hover:bg-blue-50 transition"
+                >
+                  <!-- Product Image -->
+                  <div class="w-16 h-16 mr-4 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0 border border-gray-200">
+                    <img 
+                      v-if="item.image_url" 
+                      :src="item.image_url" 
+                      :alt="item.name"
+                      class="w-full h-full object-cover"
+                      @error="handleImageError($event, item)"
+                    />
+                    <div 
+                      v-else 
+                      class="w-full h-full flex items-center justify-center bg-gray-100"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
                     </div>
-                    <div class="text-right">
-                      <p class="text-xl font-semibold">${{ (item.price * item.quantity).toFixed(2) }}</p>
+                  </div>
+                  
+                  <div class="flex-grow">
+                    <p class="text-lg font-medium text-gray-800">{{ item.name }}</p>
+                    <div class="flex items-center mt-2">
                       <button 
-                        @click.stop="removeFromCart(index)" 
-                        class="text-red-500 hover:text-red-600 text-lg mt-2 focus:outline-none"
+                        @click.stop="decrementQuantity(index)" 
+                        class="bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded-l-lg text-gray-600 focus:outline-none transition"
                       >
-                        Remove
+                        -
+                      </button>
+                      <span class="px-4 py-1 bg-white text-gray-800 border-t border-b border-gray-200">{{ item.quantity }}</span>
+                      <button 
+                        @click.stop="incrementQuantity(index)" 
+                        class="bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded-r-lg text-gray-600 focus:outline-none transition"
+                      >
+                        +
                       </button>
                     </div>
                   </div>
-                </div>
-              </div>
-
-              <!-- Order Summary -->
-              <div class="border-t-4 border-gray-200 pt-4">
-                <div class="flex justify-between mb-2 text-xl">
-                  <span>Subtotal</span>
-                  <span>${{ subtotal.toFixed(2) }}</span>
-                </div>
-                <div class="flex justify-between mb-2 text-xl">
-                  <span>Tax (10%)</span>
-                  <span>${{ tax.toFixed(2) }}</span>
-                </div>
-                <div class="flex justify-between mb-2 text-xl">
-                  <span>Discount</span>
-                  <span>${{ discount.toFixed(2) }}</span>
-                </div>
-                <div class="flex justify-between text-3xl font-bold mt-4 pt-4 border-t-4 border-gray-200">
-                  <span>Total</span>
-                  <span>${{ total.toFixed(2) }}</span>
+                  
+                  <div class="text-right ml-4">
+                    <p class="text-lg font-semibold text-gray-800">${{ (item.price * item.quantity).toFixed(2) }}</p>
+                    <button 
+                      @click.stop="removeFromCart(index)" 
+                      class="text-red-500 hover:text-red-600 text-sm mt-2 font-medium flex items-center gap-1 hover:underline"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                      Remove
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
 
+            <!-- Order Summary -->
+            <div class="border-t-2 border-gray-100 pt-6 mt-4">
+              <div class="flex justify-between mb-3 text-lg">
+                <span class="text-gray-600">Subtotal</span>
+                <span class="font-medium">${{ subtotal.toFixed(2) }}</span>
+              </div>
+              <div class="flex justify-between mb-3 text-lg">
+                <span class="text-gray-600">Tax (10%)</span>
+                <span class="font-medium">${{ tax.toFixed(2) }}</span>
+              </div>
+              <div class="flex justify-between mb-3 text-lg">
+                <span class="text-gray-600">Discount</span>
+                <span class="font-medium text-green-600">-${{ discount.toFixed(2) }}</span>
+              </div>
+              <div class="flex justify-between text-2xl font-bold mt-4 pt-4 border-t-2 border-gray-100">
+                <span class="text-gray-800">Total</span>
+                <span class="text-blue-700">${{ total.toFixed(2) }}</span>
+              </div>
+            </div>
+
             <!-- Payment Actions -->
-            <div>
-              <h3 class="text-2xl font-bold mb-4">Payment Options</h3>
+            <div class="mt-8">
+              <h3 class="text-xl font-bold mb-4 text-gray-800 flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+                Payment Options
+              </h3>
               <div class="grid grid-cols-2 gap-4 mb-6">
                 <button 
                   @click="processPayment('CASH')" 
-                  class="bg-green-500 hover:bg-green-600 text-white text-xl font-semibold py-4 rounded-lg focus:outline-none"
+                  class="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white text-lg font-semibold py-4 rounded-xl focus:outline-none transition shadow-md flex items-center justify-center gap-2"
                   :disabled="cart.length === 0"
+                  :class="{'opacity-50 cursor-not-allowed': cart.length === 0}"
                 >
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                  </svg>
                   Cash
                 </button>
                 <button 
                   @click="processPayment('CARD')" 
-                  class="bg-blue-500 hover:bg-blue-600 text-white text-xl font-semibold py-4 rounded-lg focus:outline-none"
+                  class="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white text-lg font-semibold py-4 rounded-xl focus:outline-none transition shadow-md flex items-center justify-center gap-2"
                   :disabled="cart.length === 0"
+                  :class="{'opacity-50 cursor-not-allowed': cart.length === 0}"
                 >
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                  </svg>
                   Card
                 </button>
               </div>
               <button 
                 @click="holdOrder" 
-                class="w-full bg-yellow-500 hover:bg-yellow-600 text-white text-xl font-semibold py-4 rounded-lg mb-4 focus:outline-none"
+                class="w-full bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 text-white text-lg font-semibold py-4 rounded-xl mb-4 focus:outline-none transition shadow-md flex items-center justify-center gap-2"
                 :disabled="cart.length === 0"
+                :class="{'opacity-50 cursor-not-allowed': cart.length === 0}"
               >
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
                 Hold Order
               </button>
               <button 
                 @click="cancelOrder" 
-                class="w-full bg-red-500 hover:bg-red-600 text-white text-xl font-semibold py-4 rounded-lg focus:outline-none"
+                class="w-full bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white text-lg font-semibold py-4 rounded-xl focus:outline-none transition shadow-md flex items-center justify-center gap-2"
                 :disabled="cart.length === 0"
+                :class="{'opacity-50 cursor-not-allowed': cart.length === 0}"
               >
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
                 Cancel Order
               </button>
             </div>
           </div>
         </div>
       </div>
-    </div>
-    
-    <!-- Card Payment Modal -->
-    <div v-if="showCardPaymentModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div class="bg-white rounded-lg shadow-lg w-full max-w-md p-6 mx-4">
-        <div class="flex justify-between items-center mb-6">
-          <h3 class="text-xl font-bold">Credit Card Payment</h3>
-          <button @click="showCardPaymentModal = false" class="text-gray-500 hover:text-gray-700">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-
-        <div class="border-b border-gray-200 mb-4 pb-4">
-          <p class="text-gray-600 mb-1">Order Total</p>
-          <p class="text-2xl font-bold">${{ total.toFixed(2) }}</p>
-        </div>
-
-        <!-- Card Form -->
-        <form @submit.prevent="submitCardPayment">
-          <!-- Card Number -->
-          <div class="mb-4">
-            <label class="block text-gray-700 text-sm font-bold mb-2" for="cardNumber">
-              Card Number
-            </label>
-            <input 
-              id="cardNumber" 
-              v-model="cardDetails.number" 
-              type="text" 
-              placeholder="1234 5678 9012 3456" 
-              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-              maxlength="19"
-              @input="formatCardNumber"
-              required
-            >
-          </div>
-
-          <div class="flex gap-4 mb-4">
-            <!-- Expiration Date -->
-            <div class="flex-1">
-              <label class="block text-gray-700 text-sm font-bold mb-2" for="expDate">
-                Expiration (MM/YY)
-              </label>
-              <input 
-                id="expDate" 
-                v-model="cardDetails.expiry" 
-                type="text" 
-                placeholder="MM/YY" 
-                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                maxlength="5"
-                @input="formatExpiry"
-                required
-              >
-            </div>
-
-            <!-- CVV -->
-            <div class="w-1/3">
-              <label class="block text-gray-700 text-sm font-bold mb-2" for="cvv">
-                CVV
-              </label>
-              <input 
-                id="cvv" 
-                v-model="cardDetails.cvv" 
-                type="text" 
-                placeholder="123" 
-                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                maxlength="4"
-                @input="numericOnly('cvv')"
-                required
-              >
-            </div>
-          </div>
-
-          <!-- Cardholder Name -->
-          <div class="mb-6">
-            <label class="block text-gray-700 text-sm font-bold mb-2" for="cardName">
-              Cardholder Name
-            </label>
-            <input 
-              id="cardName" 
-              v-model="cardDetails.name" 
-              type="text" 
-              placeholder="John Doe" 
-              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-              required
-            >
-          </div>
-
-          <!-- Submit and Cancel Buttons -->
-          <div class="flex gap-4">
-            <button 
-              type="button" 
-              @click="showCardPaymentModal = false" 
-              class="flex-1 py-2 px-4 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition"
-            >
-              Cancel
-            </button>
-            <button 
-              type="submit" 
-              class="flex-1 py-2 px-4 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition"
-              :disabled="processingPayment"
-            >
-              <span v-if="processingPayment">Processing...</span>
-              <span v-else>Pay ${{ total.toFixed(2) }}</span>
+      
+      <!-- Card Payment Modal -->
+      <div v-if="showCardPaymentModal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 backdrop-blur-sm">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md p-6 mx-4 transform transition-all duration-300 scale-100">
+          <div class="flex justify-between items-center mb-6">
+            <h3 class="text-xl font-bold text-gray-800 flex items-center gap-2">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+              </svg>
+              Credit Card Payment
+            </h3>
+            <button @click="showCardPaymentModal = false" class="text-gray-500 hover:text-gray-700 transition">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
             </button>
           </div>
-        </form>
+
+          <div class="bg-blue-50 rounded-lg p-4 mb-6 border border-blue-100">
+            <p class="text-blue-700 text-sm mb-1">Order Total</p>
+            <p class="text-2xl font-bold text-blue-800">${{ total.toFixed(2) }}</p>
+          </div>
+
+          <!-- Card Form -->
+          <form @submit.prevent="submitCardPayment" class="space-y-5">
+            <!-- Card Number -->
+            <div>
+              <label class="block text-gray-700 text-sm font-medium mb-2" for="cardNumber">
+                Card Number
+              </label>
+              <div class="relative">
+                <input 
+                  id="cardNumber" 
+                  v-model="cardDetails.number" 
+                  type="text" 
+                  placeholder="1234 5678 9012 3456" 
+                  class="w-full px-4 py-3 pl-11 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                  maxlength="19"
+                  @input="formatCardNumber"
+                  required
+                >
+                <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+
+            <div class="flex gap-4">
+              <!-- Expiration Date -->
+              <div class="flex-1">
+                <label class="block text-gray-700 text-sm font-medium mb-2" for="expDate">
+                  Expiration (MM/YY)
+                </label>
+                <div class="relative">
+                  <input 
+                    id="expDate" 
+                    v-model="cardDetails.expiry" 
+                    type="text" 
+                    placeholder="MM/YY" 
+                    class="w-full px-4 py-3 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                    maxlength="5"
+                    @input="formatExpiry"
+                    required
+                  >
+                  <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                </div>
+              </div>
+
+              <!-- CVV -->
+              <div class="w-1/3">
+                <label class="block text-gray-700 text-sm font-medium mb-2" for="cvv">
+                  CVV
+                </label>
+                <div class="relative">
+                  <input 
+                    id="cvv" 
+                    v-model="cardDetails.cvv" 
+                    type="text" 
+                    placeholder="123" 
+                    class="w-full px-4 py-3 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                    maxlength="4"
+                    @input="numericOnly('cvv')"
+                    required
+                  >
+                  <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                    </svg>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Cardholder Name -->
+            <div>
+              <label class="block text-gray-700 text-sm font-medium mb-2" for="cardName">
+                Cardholder Name
+              </label>
+              <div class="relative">
+                <input 
+                  id="cardName" 
+                  v-model="cardDetails.name" 
+                  type="text" 
+                  placeholder="John Doe" 
+                  class="w-full px-4 py-3 pl-11 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                  required
+                >
+                <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+
+            <!-- Credit Card Animation -->
+            <div class="relative h-48 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl shadow-lg overflow-hidden p-6 text-white mb-2">
+              <div class="absolute top-4 left-6">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-white opacity-80" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                </svg>
+              </div>
+              
+              <div class="absolute bottom-6 left-6 right-6">
+                <div class="text-xl font-mono tracking-widest mb-4">
+                  {{ cardDetails.number || '**** **** **** ****' }}
+                </div>
+                <div class="flex justify-between">
+                  <div>
+                    <div class="text-xs opacity-80 mb-1">Card Holder</div>
+                    <div class="font-medium truncate">{{ cardDetails.name || 'YOUR NAME' }}</div>
+                  </div>
+                  <div>
+                    <div class="text-xs opacity-80 mb-1">Expires</div>
+                    <div>{{ cardDetails.expiry || 'MM/YY' }}</div>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Animated chip -->
+              <div class="absolute top-16 left-6">
+                <div class="h-10 w-12 bg-yellow-300 bg-opacity-80 rounded-md flex items-center justify-center overflow-hidden">
+                  <div class="w-full h-full grid grid-cols-3 gap-px bg-yellow-600">
+                    <div class="bg-yellow-300"></div>
+                    <div class="bg-yellow-300"></div>
+                    <div class="bg-yellow-300"></div>
+                    <div class="bg-yellow-300"></div>
+                    <div class="bg-yellow-300"></div>
+                    <div class="bg-yellow-300"></div>
+                    <div class="bg-yellow-300"></div>
+                    <div class="bg-yellow-300"></div>
+                    <div class="bg-yellow-300"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Submit and Cancel Buttons -->
+            <div class="flex gap-4 pt-2">
+              <button 
+                type="button" 
+                @click="showCardPaymentModal = false" 
+                class="flex-1 py-3 px-4 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition flex items-center justify-center gap-2"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+                Cancel
+              </button>
+              <button 
+                type="submit" 
+                class="flex-1 py-3 px-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition shadow-md flex items-center justify-center gap-2"
+                :disabled="processingPayment"
+              >
+                <svg v-if="!processingPayment" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 9l3 3m0 0l-3 3m3-3H8m13 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <svg v-else class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <span v-if="processingPayment">Processing...</span>
+                <span v-else>Pay ${{ total.toFixed(2) }}</span>
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+      
+      <!-- Order Confirmation Modal -->
+      <div v-if="showOrderConfirmation" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 backdrop-blur-sm">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md mx-4 transform transition-all duration-300 scale-100 overflow-hidden">
+          <div class="bg-gradient-to-r from-green-500 to-green-600 text-white p-4">
+            <div class="flex justify-between items-center">
+              <h3 class="text-xl font-bold flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Order Complete
+              </h3>
+              <button @click="closeOrderConfirmation" class="text-white hover:text-gray-200 transition">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="p-6">
+            <div class="text-center mb-6">
+              <div class="bg-green-100 rounded-full p-4 w-20 h-20 mx-auto mb-4 flex items-center justify-center shadow-inner">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <h4 class="text-2xl font-bold mb-2 text-gray-800">Thank You!</h4>
+              <p class="text-gray-600">Your order has been successfully processed.</p>
+            </div>
+            
+            <!-- Order Confirmation Modal Items Section -->
+            <div class="bg-gray-50 rounded-lg p-4 mb-4 max-h-48 overflow-y-auto">
+              <h5 class="font-semibold mb-2 text-gray-700">Order Items:</h5>
+              <div v-for="(item, index) in completedOrder.items" :key="index" class="flex items-center py-2 border-b border-gray-200 last:border-0">
+                <!-- Item Image -->
+                <div class="w-10 h-10 bg-white rounded overflow-hidden mr-3 border border-gray-200">
+                  <img 
+                    v-if="item.image_url" 
+                    :src="item.image_url" 
+                    :alt="item.name"
+                    class="w-full h-full object-cover"
+                  />
+                  <div v-else class="w-full h-full flex items-center justify-center bg-gray-100">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                </div>
+                
+                <!-- Item Details -->
+                <div class="flex-grow">
+                  <div class="text-sm font-medium text-gray-800">{{ item.name }}</div>
+                  <div class="text-xs text-gray-500">Qty: {{ item.quantity }}</div>
+                </div>
+                
+                <!-- Item Price -->
+                <div class="text-right">
+                  <div class="text-sm font-semibold text-gray-800">${{ (item.price * item.quantity).toFixed(2) }}</div>
+                  <div class="text-xs text-gray-500">${{ item.price.toFixed(2) }} each</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="bg-gray-100 rounded-lg p-4 mb-6">
+              <div class="grid grid-cols-2 gap-2 text-sm">
+                <span class="font-semibold text-gray-700">Order #:</span>
+                <span class="text-right">{{ completedOrder.orderId }}</span>
+                
+                <span class="font-semibold text-gray-700">Date:</span>
+                <span class="text-right">{{ new Date().toLocaleDateString() }}</span>
+                
+                <span class="font-semibold text-gray-700">Time:</span>
+                <span class="text-right">{{ new Date().toLocaleTimeString() }}</span>
+                
+                <span class="font-semibold text-gray-700">Payment Method:</span>
+                <span class="text-right">{{ completedOrder.paymentMethod }}</span>
+              </div>
+              <div class="flex justify-between mt-3 pt-3 border-t border-gray-200">
+                <span class="font-semibold text-gray-800">Total Amount:</span>
+                <span class="font-bold text-blue-700">${{ completedOrder.total.toFixed(2) }}</span>
+              </div>
+            </div>
+
+            <!-- Receipt actions -->
+            <div class="flex gap-3 mb-4">
+              <button 
+                @click="printReceipt" 
+                class="flex-1 py-3 flex items-center justify-center bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition shadow-md"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                </svg>
+                Print Receipt
+              </button>
+              <button 
+                @click="emailReceipt" 
+                class="flex-1 py-3 flex items-center justify-center bg-green-600 text-white rounded-lg hover:bg-green-700 transition shadow-md"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                </svg>
+                Email Receipt
+              </button>
+            </div>
+
+            <!-- New order button -->
+            <button 
+              @click="closeOrderConfirmation" 
+              class="w-full py-3 px-4 bg-gradient-to-r from-gray-800 to-gray-900 text-white rounded-lg hover:from-gray-900 hover:to-black transition shadow-md flex items-center justify-center gap-2"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+              </svg>
+              Start New Order
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
-  <!-- Add this new modal right after the card payment modal in your template -->
-
-<!-- Order Confirmation Modal -->
-<div v-if="showOrderConfirmation" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-  <div class="bg-white rounded-lg shadow-lg w-full max-w-md p-6 mx-4">
-    <div class="flex justify-between items-center mb-4">
-      <h3 class="text-xl font-bold text-green-600">Order Complete</h3>
-      <button @click="closeOrderConfirmation" class="text-gray-500 hover:text-gray-700">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-        </svg>
-      </button>
-    </div>
-
-    <div class="text-center mb-6">
-      <div class="bg-green-100 rounded-full p-4 w-20 h-20 mx-auto mb-4 flex items-center justify-center">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-        </svg>
-      </div>
-      <h4 class="text-2xl font-bold mb-2">Thank You!</h4>
-      <p class="text-gray-600">Your order has been successfully processed.</p>
-    </div>
-
-    <div class="bg-gray-100 rounded-lg p-4 mb-4">
-      <div class="flex justify-between mb-2">
-        <span class="font-semibold">Order #:</span>
-        <span>{{ completedOrder.orderId }}</span>
-      </div>
-      <div class="flex justify-between mb-2">
-        <span class="font-semibold">Date:</span>
-        <span>{{ new Date().toLocaleDateString() }}</span>
-      </div>
-      <div class="flex justify-between mb-2">
-        <span class="font-semibold">Time:</span>
-        <span>{{ new Date().toLocaleTimeString() }}</span>
-      </div>
-      <div class="flex justify-between mb-2">
-        <span class="font-semibold">Payment Method:</span>
-        <span>{{ completedOrder.paymentMethod }}</span>
-      </div>
-      <div class="flex justify-between">
-        <span class="font-semibold">Total Amount:</span>
-        <span class="font-bold">${{ completedOrder.total.toFixed(2) }}</span>
-      </div>
-    </div>
-
-    <!-- Receipt actions -->
-    <div class="flex gap-3 mb-4">
-      <button 
-        @click="printReceipt" 
-        class="flex-1 py-2 flex items-center justify-center bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-        </svg>
-        Print Receipt
-      </button>
-      <button 
-        @click="emailReceipt" 
-        class="flex-1 py-2 flex items-center justify-center bg-green-500 text-white rounded-lg hover:bg-green-600 transition"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-        </svg>
-        Email Receipt
-      </button>
-    </div>
-
-    <!-- New order button -->
-    <button 
-      @click="closeOrderConfirmation" 
-      class="w-full py-3 bg-gray-800 text-white rounded-lg hover:bg-gray-900 transition"
-    >
-      Start New Order
-    </button>
-  </div>
-</div>
 </template>
 <script>
 import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue';
@@ -506,6 +773,16 @@ const barcodeApiClient = axios.create({
   },
   timeout: 10000
 });
+// Add this method to the methods section of your component
+
+// Handle image loading errors
+const handleImageError = (event, product) => {
+  console.warn(`Failed to load image for product: ${product.name}`);
+  // Replace with transparent pixel to prevent continuous error attempts
+  event.target.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+  // Flag as no image available
+  product.image_url = null;
+};
 
 export default {
   setup() {
@@ -829,178 +1106,190 @@ export default {
 
     // Process payment - Updated version that shows order confirmation
     const processPayment = async (paymentMethod) => {
-      console.log("Processing payment method:", paymentMethod);
-      
-      if (cart.value.length === 0) return;
+  if (cart.value.length === 0) return;
 
-      // If Card payment, show the payment modal and exit early
-      if (paymentMethod === 'CARD') {
-        console.log("Showing card payment modal");
-        showCardPaymentModal.value = true;
-        return; // Important! This prevents the function from continuing
-      }
+  // Handle card payment separately
+  if (paymentMethod === 'CARD') {
+    showCardPaymentModal.value = true;
+    return;
+  }
 
-      // For Cash or other payment methods, continue with original logic
-      try {
-        console.log("Processing cash payment");
-        // Create order
-        const orderData = {
-          customerId: 1, // Replace with actual customer ID
-          totalAmount: subtotal.value,
-          taxAmount: tax.value,
-          discountAmount: discount.value,
-          finalAmount: total.value,
-          orderType: "IN_STORE",
-          paymentStatus: "PENDING",
-          orderItems: cart.value.map(item => ({
-            productId: item.productId,
-            quantity: item.quantity,
-            price: item.price,
-            subtotal: item.price * item.quantity
-          }))
-        };
+  try {
+    processingPayment.value = true;
+    
+    // Prepare order items in the exact working format
+    const orderItems = cart.value.map(item => ({
+      productId: Number(item.productId),
+      quantity: Number(item.quantity),
+      price: Number(item.price),
+      subtotal: Number(item.price * item.quantity)
+    }));
 
-        const orderResponse = await orderService.createOrder(orderData);
-        const order = orderResponse.data;
-        console.log('Order created:', order);
+    // Create order data matching the working Postman example
+    const orderData = {
+      customerId: 1,
+      totalAmount: Number(subtotal.value),
+      taxAmount: Number(tax.value),
+      finalAmount: Number(total.value),
+      discountAmount: Number(discount.value || 0),
+      orderType: "In-Store",
+      paymentStatus: "PENDING",
+      deliveryType: "",
+      orderItems: orderItems
+    };
 
-        // Process payment
-        const paymentData = {
-          transactionId: generateTransactionId(),
-          orderId: order.orderId,
-          amount: total.value,
-          paymentMethod: paymentMethod,
-          paymentType: paymentMethod === 'CARD' ? 'CARD' : 'CASH'
-        };
+    console.log("Submitting order:", JSON.stringify(orderData, null, 2));
 
-        const paymentResponse = await paymentService.processPayment(paymentData);
-        console.log('Payment processed:', paymentResponse.data);
+    // Create order
+    const orderResponse = await orderService.createOrder(orderData);
+    const order = orderResponse.data;
 
-        // Set completed order data for confirmation
-        completedOrder.value = {
-          orderId: order.orderId,
-          paymentMethod: 'Cash',
-          total: total.value,
-          items: [...cart.value]
-        };
-        
-        // Clear cart
-        clearCart();
-        
-        // Show order confirmation
-        showOrderConfirmation.value = true;
-        
-      } catch (error) {
-        console.error('Error processing order:', error);
-        alert('There was an error processing your order. Please try again.');
-      }
+    // Process payment
+    const paymentData = {
+      transactionId: generateTransactionId(),
+      orderId: order.orderId,
+      amount: Number(total.value),
+      paymentMethod: paymentMethod,
+      paymentType: paymentMethod === 'CARD' ? 'CARD' : 'CASH'
+    };
+
+    await paymentService.processPayment(paymentData);
+
+    // Update UI
+    completedOrder.value = {
+      orderId: order.orderId,
+      paymentMethod: paymentMethod === 'CARD' ? 'Credit Card' : 'Cash',
+      total: total.value,
+      items: [...cart.value]
     };
     
-    // Submit card payment with confirmation
-    const submitCardPayment = async () => {
-      processingPayment.value = true;
-      
-      try {
-        // Validate card details
-        const cardNumber = cardDetails.value.number.replace(/\s/g, '');
-        if (cardNumber.length < 13 || cardNumber.length > 19) {
-          alert('Please enter a valid card number');
-          processingPayment.value = false;
-          return;
-        }
-        
-        // Simple validation for other fields
-        if (cardDetails.value.expiry.length !== 5) {
-          alert('Please enter a valid expiration date (MM/YY)');
-          processingPayment.value = false;
-          return;
-        }
-        
-        if (cardDetails.value.cvv.length < 3) {
-          alert('Please enter a valid CVV code');
-          processingPayment.value = false;
-          return;
-        }
-        
-        if (cardDetails.value.name.length < 3) {
-          alert('Please enter the cardholder name');
-          processingPayment.value = false;
-          return;
-        }
-        
-        // In a real application, you would send the card details to a payment processor
-        // Here we'll simulate a payment processing delay
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        
-        // Now continue with the order processing
-        const orderData = {
-          customerId: 1,
-          totalAmount: subtotal.value,
-          taxAmount: tax.value,
-          discountAmount: discount.value,
-          finalAmount: total.value,
-          orderType: "IN_STORE",
-          paymentStatus: "COMPLETED",
-          orderItems: cart.value.map(item => ({
-            productId: item.productId,
-            quantity: item.quantity,
-            price: item.price,
-            subtotal: item.price * item.quantity
-          }))
-        };
-        
-        // Create order
-        const orderResponse = await orderService.createOrder(orderData);
-        const order = orderResponse.data;
-        
-        // Process payment
-        const paymentData = {
-          transactionId: generateTransactionId(),
-          orderId: order.orderId,
-          amount: total.value,
-          paymentMethod: 'CARD',
-          paymentType: 'CARD',
-          cardDetails: {
-            last4: cardNumber.slice(-4),
-            cardholderName: cardDetails.value.name,
-            expiryDate: cardDetails.value.expiry
-          }
-        };
-        
-        const paymentResponse = await paymentService.processPayment(paymentData);
-        
-        // Set completed order data for confirmation display
-        completedOrder.value = {
-          orderId: order.orderId,
-          paymentMethod: 'Credit Card',
-          total: total.value,
-          items: [...cart.value]
-        };
-        
-        // Reset state
-        showCardPaymentModal.value = false;
-        processingPayment.value = false;
-        
-        // Reset card details
-        cardDetails.value = {
-          number: '',
-          expiry: '',
-          cvv: '',
-          name: ''
-        };
-        
-        // Show order confirmation
-        showOrderConfirmation.value = true;
-        
-        // Clear cart
-        clearCart();
-        
-      } catch (error) {
-        console.error('Error processing card payment:', error);
-        alert('There was an error processing your payment. Please try again.');
-        processingPayment.value = false;
+    clearCart();
+    showOrderConfirmation.value = true;
+    
+  } catch (error) {
+    console.error('Payment error:', {
+      message: error.message,
+      response: error.response?.data,
+      request: error.config?.data
+    });
+    
+    let errorMessage = 'There was an error processing your payment.';
+    if (error.response?.data?.error) {
+      errorMessage += `\n\nError: ${error.response.data.error}`;
+    } else if (error.message) {
+      errorMessage += `\n\n${error.message}`;
+    }
+    
+    alert(errorMessage);
+  } finally {
+    processingPayment.value = false;
+  }
+};
+
+const submitCardPayment = async () => {
+  processingPayment.value = true;
+  
+  try {
+    // Validate card details
+    const cardNumber = cardDetails.value.number.replace(/\s/g, '');
+    if (!/^\d{13,19}$/.test(cardNumber)) {
+      alert('Please enter a valid 13-19 digit card number');
+      return;
+    }
+    
+    if (!/^\d{2}\/\d{2}$/.test(cardDetails.value.expiry)) {
+      alert('Please enter a valid expiration date in MM/YY format');
+      return;
+    }
+    
+    if (!/^\d{3,4}$/.test(cardDetails.value.cvv)) {
+      alert('Please enter a valid 3 or 4 digit CVV code');
+      return;
+    }
+    
+    if (cardDetails.value.name.trim().length < 3) {
+      alert('Please enter the full cardholder name');
+      return;
+    }
+
+    // Create order data with proper types
+    const orderData = {
+      customerId: 1,
+      totalAmount: Number(subtotal.value),
+      taxAmount: Number(tax.value),
+      discountAmount: Number(discount.value || 0),
+      finalAmount: Number(total.value),
+      orderType: "In-Store",
+      paymentStatus: "PENDING",
+      deliveryType: "",
+      orderItems: cart.value.map(item => ({
+        productId: Number(item.productId),
+        quantity: Number(item.quantity),
+        price: Number(item.price),
+        subtotal: Number(item.price * item.quantity)
+      }))
+    };
+
+    console.log('Submitting order:', JSON.stringify(orderData, null, 2));
+
+    // Create order
+    const orderResponse = await orderService.createOrder(orderData);
+    const order = orderResponse.data;
+
+    // Process payment
+    const paymentData = {
+      transactionId: generateTransactionId(),
+      orderId: order.orderId,
+      amount: Number(total.value),
+      paymentMethod: "CARD",
+      cardDetails: {
+        cardNumber: cardNumber,
+        expiryDate: cardDetails.value.expiry,
+        cvv: cardDetails.value.cvv,
+        cardholderName: cardDetails.value.name.trim()
       }
     };
+
+    console.log('Processing payment:', JSON.stringify(paymentData, null, 2));
+    await paymentService.processPayment(paymentData);
+
+    // Update UI state
+    completedOrder.value = {
+      orderId: order.orderId,
+      paymentMethod: 'Credit Card',
+      total: total.value,
+      items: [...cart.value]
+    };
+
+    // Reset everything
+    showCardPaymentModal.value = false;
+    cardDetails.value = { number: '', expiry: '', cvv: '', name: '' };
+    showOrderConfirmation.value = true;
+    clearCart();
+    
+  } catch (error) {
+    console.error('Payment error:', {
+      message: error.message,
+      response: error.response?.data,
+      request: error.config?.data
+    });
+    
+    let errorMessage = 'There was an error processing your payment.';
+    if (error.response?.data?.error) {
+      errorMessage += `\n\nError: ${error.response.data.error}`;
+    } else if (error.message) {
+      errorMessage += `\n\n${error.message}`;
+    }
+    
+    alert(errorMessage);
+  } finally {
+    processingPayment.value = false;
+  }
+};
+    
+    // Submit card payment with confirmation
+    // Submit card payment with confirmation
+
 
     // Close the order confirmation modal and reset for a new order
     const closeOrderConfirmation = () => {

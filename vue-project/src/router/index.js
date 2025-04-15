@@ -8,6 +8,8 @@ const ConfirmationPage = () => import('../views/ConfirmationPage.vue');
 const EndOfDayReport = () => import('../views/EndOfDayReport.vue');
 const ProductManagement = () => import('../views/ProductManagement.vue');
 const OrdersPage = () => import('../views/OrdersPage.vue');
+const EndOfDayReportHistory = () => import('../views/EndOfDayReportHistory.vue');
+const OrderDetails=()=>import('../views/OrderDetails.vue')
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -19,10 +21,22 @@ const router = createRouter({
       meta: { title: 'POS Dashboard' }
     },
     {
+      path: '/order/:id',
+      name: 'OrderDetails',
+      component: OrderDetails,
+      props: true
+    },
+    {
       path: '/customers',
       name: 'customers',
       component: CustomerManagement,
       meta: { title: 'Customer Management' }
+    },
+    {
+      path: '/reports/history',
+      name: 'report-history',
+      component: EndOfDayReportHistory,
+      meta: { title: 'End of Day Report History' }
     },
     {
       path: '/payment',
