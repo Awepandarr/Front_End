@@ -6,14 +6,14 @@
         <div class="flex justify-between items-center">
           <h1 class="text-3xl font-bold text-gray-800">POS Dashboard</h1>
           <div class="flex items-center gap-3">
-            <span class="text-sm text-gray-500">Monday, March 24, 2025</span>
+            <span class="text-sm text-gray-500">{{ currentDate }}</span>
             <span class="h-6 w-px bg-gray-300"></span>
             <button class="flex items-center gap-2 text-gray-600 hover:text-blue-600 transition">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
-              <span>Settings</span>
+              <span><router-link  to="/settings">Settings</router-link></span>
             </button>
           </div>
         </div>
@@ -695,8 +695,8 @@
                 
                 <!-- Item Price -->
                 <div class="text-right">
-                  <div class="text-sm font-semibold text-gray-800">${{ (item.price * item.quantity).toFixed(2) }}</div>
-                  <div class="text-xs text-gray-500">${{ item.price.toFixed(2) }} each</div>
+                  <div class="text-sm font-semibold text-gray-800"> £{{ (item.price * item.quantity).toFixed(2) }}</div>
+                  <div class="text-xs text-gray-500">£{{ item.price.toFixed(2) }} each</div>
                 </div>
               </div>
             </div>
@@ -717,7 +717,7 @@
               </div>
               <div class="flex justify-between mt-3 pt-3 border-t border-gray-200">
                 <span class="font-semibold text-gray-800">Total Amount:</span>
-                <span class="font-bold text-blue-700">${{ completedOrder.total.toFixed(2) }}</span>
+                <span class="font-bold text-blue-700">£{{ completedOrder.total.toFixed(2) }}</span>
               </div>
             </div>
 
@@ -829,6 +829,10 @@ export default {
       total: 0,
       items: []
     });
+    const currentDate = computed(() => {
+  const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+  return new Date().toLocaleDateString('en-GB', options);
+});
     
     // Format card number with spaces every 4 digits
     const formatCardNumber = () => {
@@ -1125,6 +1129,7 @@ export default {
       subtotal: Number(item.price * item.quantity)
     }));
 
+
     // Create order data matching the working Postman example
     const orderData = {
       customerId: 1,
@@ -1155,7 +1160,6 @@ export default {
 
     await paymentService.processPayment(paymentData);
 
-    // Update UI
     completedOrder.value = {
       orderId: order.orderId,
       paymentMethod: paymentMethod === 'CARD' ? 'Credit Card' : 'Cash',
@@ -1624,6 +1628,7 @@ const emailReceipt = async () => {
       showCardPaymentModal,
       processingPayment,
       cardDetails,
+      currentDate,
       
       // Order confirmation state
       showOrderConfirmation,

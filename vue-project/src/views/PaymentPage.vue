@@ -13,7 +13,7 @@
           <div class="grid grid-cols-2 gap-4">
             <div>
               <h3 class="text-lg font-semibold">Order Details</h3>
-              <p>Order ID: {{ order.orderId }}</p>
+              <p>Order ID: {{ order.orderId || 'Will be generated' }}</p>
             </div>
             <div class="text-right">
               <p class="text-2xl font-bold">Total: ${{ order.finalAmount.toFixed(2) }}</p>
@@ -24,25 +24,6 @@
         <!-- Error Message -->
         <div v-if="errorMessage" class="bg-red-100 p-4 text-red-800">
           {{ errorMessage }}
-        </div>
-
-        <!-- Debug Info (remove in production) -->
-        <div class="p-4 bg-gray-50 border-b">
-          <details>
-            <summary class="cursor-pointer text-gray-700">Debug Information</summary>
-            <pre class="mt-2 text-xs overflow-auto max-h-40">{{ JSON.stringify(order, null, 2) }}</pre>
-          </details>
-        </div>
-
-        <!-- Emergency Bypass (remove in production) -->
-        <div class="p-4 bg-yellow-50 border border-yellow-200 rounded-md m-4">
-          <p class="text-yellow-700 mb-2">Having trouble with payments?</p>
-          <button 
-            @click="emergencyBypass" 
-            class="w-full py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600"
-          >
-            Emergency: Skip Payment Processing
-          </button>
         </div>
 
         <!-- Payment Form -->
@@ -62,104 +43,107 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { paymentService } from '@/services/api.service';
+import { paymentService, orderService } from '@/services/api.service';
 import PaymentForm from '@/components/PaymentForm.vue';
 
 const router = useRouter();
 const order = ref(null);
 const errorMessage = ref('');
 
-onMounted(() => {
-  const savedOrder = localStorage.getItem('order');
-  if (savedOrder) {
-    try {
-      const parsed = JSON.parse(savedOrder);
-      console.log('Loaded order:', parsed);
+onMounted(async () => {
+  try {
+    // Step 1: Check if we have a saved order in localStorage
+    const savedOrder = localStorage.getItem('order');
+    if (savedOrder) {
+      const parsedOrder = JSON.parse(savedOrder);
+      console.log('Loaded saved order:', parsedOrder);
 
-      // Type check
-      if (!parsed.orderId || typeof parsed.finalAmount !== 'number') {
-        throw new Error('Invalid order format.');
+      // Check if order already has an ID
+      if (parsedOrder.orderId) {
+        // Order already created on backend
+        order.value = parsedOrder;
+        console.log('Using existing order ID:', order.value.orderId);
+      } else {
+        // Need to create order on backend first
+        console.log('Creating new order on backend');
+        await createOrder(parsedOrder);
       }
-
-      order.value = parsed;
-    } catch (err) {
-      console.error('Error loading order:', err);
-      errorMessage.value = 'Could not load your order. Please return to the cart.';
+    } else {
+      errorMessage.value = 'No order found. Please create an order first.';
     }
-  } else {
-    errorMessage.value = 'No order found. Please create an order first.';
+  } catch (err) {
+    console.error('Error initializing payment page:', err);
+    errorMessage.value = err.message || 'Failed to load order. Please return to the cart.';
   }
 });
 
-const handlePaymentSuccess = async (paymentInfo) => {
+// Updated createOrder method in PaymentPage.vue
+const createOrder = async (orderData) => {
   try {
-    if (!order.value) {
-      throw new Error('Missing order information.');
-    }
-
-    const paymentRequest = {
-      transactionId: paymentInfo.transactionId,
-      orderId: order.value.orderId,
-      amount: order.value.finalAmount,
-      paymentMethod: paymentInfo.method,
+    // Format the order data to match backend expectations
+    const formattedOrder = {
+      customerId: orderData.customerId || 1,
+      totalAmount: Number(orderData.totalAmount.toFixed(2)),
+      taxAmount: Number(orderData.taxAmount.toFixed(2)),
+      finalAmount: Number(orderData.finalAmount.toFixed(2)),
+      discountAmount: Number((orderData.discountAmount || 0).toFixed(2)),
+      orderType: orderData.orderType || "IN_STORE",
+      orderItems: (orderData.orderItems || []).map(item => ({
+        productId: Number(item.productId),
+        quantity: Number(item.quantity),
+        price: Number(Number(item.price).toFixed(2)),
+        subtotal: Number(Number(item.price * item.quantity).toFixed(2))
+      }))
     };
 
-    if (paymentInfo.method === 'CARD' && paymentInfo.cardDetails) {
-      paymentRequest.cardDetails = paymentInfo.cardDetails;
-    }
+    console.log('Creating order on backend:', formattedOrder);
+    
+    // Call the API to create the order
+    const response = await orderService.createOrder(formattedOrder);
+    
+    console.log('Order created successfully:', response.data);
+    
+    // Update the order with the returned order ID
+    order.value = {
+      ...orderData,
+      orderId: response.data.orderId
+    };
+    
+    // Save the updated order with ID back to localStorage
+    localStorage.setItem('order', JSON.stringify(order.value));
+    
+    return order.value;
+  } catch (error) {
+    console.error('Error creating order:', error);
+    throw new Error(error.response?.data?.error || 'Failed to create order');
+  }
+};
 
-    console.log('Sending payment request:', {
-      ...paymentRequest,
-      cardDetails: paymentRequest.cardDetails ? '(hidden)' : undefined
-    });
-
-    const response = await paymentService.processPayment(paymentRequest);
-    console.log('Payment response:', response.data);
-
-    // Cleanup and redirect
+const handlePaymentSuccess = async (paymentInfo) => {
+  try {
+    console.log('Payment successful:', paymentInfo);
+    
+    // Clear the order from localStorage
     localStorage.removeItem('order');
     localStorage.removeItem('cart');
 
+    // Redirect to confirmation page
     router.push({
       path: '/confirmation',
       query: {
-        transactionId: response.data.transactionId,
-        amount: response.data.amount,
-        method: response.data.paymentMethod
+        transactionId: paymentInfo.transactionId,
+        amount: paymentInfo.amount,
+        method: paymentInfo.method
       }
     });
-
   } catch (error) {
     console.error('handlePaymentSuccess error:', error);
-    if (import.meta.env.MODE !== 'production') {
-      console.warn('Dev mode: falling back to emergency bypass');
-      emergencyBypass();
-    } else {
-      errorMessage.value = error.message || 'Payment failed. Please try again.';
-    }
+    errorMessage.value = error.message || 'Error completing payment process.';
   }
 };
 
 const handlePaymentError = (error) => {
   console.error('Payment error:', error);
   errorMessage.value = error.message || 'Payment processing failed. Please try again.';
-};
-
-const emergencyBypass = () => {
-  console.warn('Emergency bypass activated');
-
-  const emergency = {
-    transactionId: 'EMERGENCY' + Date.now(),
-    amount: order.value?.finalAmount || 0,
-    method: 'EMERGENCY'
-  };
-
-  localStorage.removeItem('order');
-  localStorage.removeItem('cart');
-
-  router.push({
-    path: '/confirmation',
-    query: emergency
-  });
 };
 </script>

@@ -45,18 +45,73 @@ export const customerService = {
   getAllCustomers() {
     return apiClient.get('/api/customers');
   },
+  
   getCustomerByID(id) {
     return apiClient.get(`/api/customer/${id}`);
   },
+  
   createCustomer(customerData) {
-    return apiClient.post('/api/customer', customerData);
+    // Ensure all fields are strings, even if undefined
+    const formattedData = {
+      firstName: customerData.firstName || '',
+      lastName: customerData.lastName || '',
+      email: customerData.email || '',
+      phoneNumber: customerData.phoneNumber || '',
+      address: customerData.address || ''
+    };
+    
+    return apiClient.post('/api/customer', formattedData);
   },
+  
   updateCustomer(id, customerData) {
-    return apiClient.put(`/api/customer/${id}`, customerData);
+    // The API expects customerName as one field, but our form has firstName and lastName
+    // If we're receiving a customerName directly, use it, otherwise format it
+    let formattedData = { ...customerData };
+    
+    // Make sure we're using the expected field names
+    if (!formattedData.customerName && (formattedData.firstName || formattedData.lastName)) {
+      formattedData.firstName = formattedData.firstName || '';
+      formattedData.lastName = formattedData.lastName || '';
+    }
+    
+    return apiClient.put(`/api/customer/${id}`, formattedData);
   },
-  deleteCustomer(id) {
-    return apiClient.delete(`/api/customer/${id}`);
+  
+// In your api.service.js file, update the deleteCustomer function:
+
+deleteCustomer(id) {
+  if (!id) {
+    console.error('Customer ID is required for deletion');
+    return Promise.reject(new Error('Customer ID is required'));
   }
+  
+  console.log(`Attempting to delete customer with ID: ${id}`);
+  
+  // Make sure this URL pattern matches your Java backend route
+  // Your backend has: delete("/api/customer/:customerId", ...)
+  return apiClient.delete(`/api/customer/${id}`)
+    .then(response => {
+      console.log('Delete customer response:', response);
+      return response;
+    })
+    .catch(error => {
+      console.error('Error deleting customer:', error);
+      
+      // Log more detailed error information
+      if (error.response) {
+        console.error('Server responded with:', {
+          status: error.response.status,
+          data: error.response.data
+        });
+      } else if (error.request) {
+        console.error('No response received from server');
+      } else {
+        console.error('Error setting up request:', error.message);
+      }
+      
+      throw error; // Re-throw to handle in the component
+    });
+}
 };
 // Add these methods to your existing reportService in services/api.service.js
 
@@ -121,27 +176,30 @@ export const orderService = {
   },
   
   createOrder(orderData) {
-    // Validate and format order data before sending
-    const validatedOrder = {
-      customerId: orderData.customerId || 1,
-      orderDate: orderData.orderDate || new Date().toISOString(),
-      
-      // Ensure items is an array with required fields
-      items: Array.isArray(orderData.items) ? orderData.items.map(item => ({
-        productId: item.productId,
-        quantity: parseInt(item.quantity) || 1,
-        price: parseFloat(item.price) || 0
-      })) : [],
-      
-      // Ensure all amounts are numbers
-      totalAmount: parseFloat(orderData.totalAmount) || 0,
-      discountAmount: parseFloat(orderData.discountAmount || 0),
-      taxAmount: parseFloat(orderData.taxAmount) || 0,
-      finalAmount: parseFloat(orderData.finalAmount) || 0
+    // Format the order data to match exactly what your Java backend expects
+    const formattedOrderData = {
+      customerId: parseInt(orderData.customerId, 10) || 1,
+      totalAmount: typeof orderData.totalAmount === 'string' ? 
+        orderData.totalAmount : parseFloat(orderData.totalAmount).toFixed(2),
+      taxAmount: typeof orderData.taxAmount === 'string' ? 
+        orderData.taxAmount : parseFloat(orderData.taxAmount).toFixed(2),
+      finalAmount: typeof orderData.finalAmount === 'string' ? 
+        orderData.finalAmount : parseFloat(orderData.finalAmount).toFixed(2),
+      discountAmount: typeof orderData.discountAmount === 'string' ? 
+        orderData.discountAmount : parseFloat(orderData.discountAmount || 0).toFixed(2),
+      orderType: orderData.orderType || "In-Store",
+      deliveryType: orderData.deliveryType || "",
+      orderItems: Array.isArray(orderData.orderItems) ? 
+        orderData.orderItems.map(item => ({
+          productId: parseInt(item.productId, 10),
+          quantity: parseInt(item.quantity, 10),
+          price: typeof item.price === 'string' ? item.price : parseFloat(item.price).toFixed(2),
+          subtotal: typeof item.subtotal === 'string' ? item.subtotal : parseFloat(item.subtotal).toFixed(2)
+        })) : []
     };
     
-    console.log('Creating order with validated data:', validatedOrder);
-    return apiClient.post('/api/order', validatedOrder);
+    console.log('Sending formatted order data:', formattedOrderData);
+    return apiClient.post('/api/order', formattedOrderData);
   },
   
   updateOrder(id, orderData) {
@@ -152,9 +210,11 @@ export const orderService = {
     return apiClient.delete(`/api/order/${id}`);
   }
 };
-
 // Payment service
 // src/services/api.service.js
+// Update your payment service implementation to match your Java backend
+
+// Update payment service method in api.service.js
 // Update your payment service implementation to match your Java backend
 
 export const paymentService = {
@@ -167,27 +227,27 @@ export const paymentService = {
     // Format the payment data to match exactly what your Java backend expects
     const formattedPaymentData = {
       transactionId: paymentData.transactionId,
-      orderId: paymentData.orderId,
-      amount: typeof paymentData.amount === 'number' ? 
-        paymentData.amount : parseFloat(paymentData.amount) || 0,
-      paymentMethod: paymentData.paymentMethod
+      orderId: parseInt(paymentData.orderId, 10),
+      amount: typeof paymentData.amount === 'string' ? 
+        paymentData.amount : parseFloat(paymentData.amount).toFixed(2),
+      paymentMethod: paymentData.paymentMethod.toUpperCase()
     };
 
-    // Add payment method specific details
+    // Add card details if it's a card payment
     if (paymentData.paymentMethod === 'CARD' && paymentData.cardDetails) {
-      // Format card details correctly
       formattedPaymentData.cardDetails = {
         cardNumber: paymentData.cardDetails.cardNumber.replace(/\s+/g, ''),
         expiryDate: paymentData.cardDetails.expiryDate,
         cvv: paymentData.cardDetails.cvv,
         cardholderName: paymentData.cardDetails.cardholderName
       };
-    } else if (paymentData.paymentMethod === 'CASH') {
-      // For cash payments, just pass the cash amount
-      formattedPaymentData.cashAmount = paymentData.cashAmount;
     }
 
-    // Make the API call with properly formatted data
+    console.log('Sending formatted payment data:', {
+      ...formattedPaymentData,
+      cardDetails: formattedPaymentData.cardDetails ? '(sensitive data hidden)' : undefined
+    });
+    
     return apiClient.post('/api/payment', formattedPaymentData);
   },
   
@@ -216,6 +276,8 @@ export default {
   orderService,
   paymentService,
   reportService,
-  invoiceService
+  invoiceService,
+  apiClient,
+  paymentService
 
 };

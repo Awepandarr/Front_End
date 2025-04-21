@@ -274,6 +274,8 @@
   
   <script>
   import { ref, computed, onMounted, watch } from 'vue';
+  import { productService } from '../services/api.service';  // Make sure to uncomment this
+
   // In a real implementation, import the product service
   // import { productService } from '../services/api.service';
   
@@ -307,34 +309,48 @@
         end: 10
       });
   
-      const fetchProducts = async () => {
-        loading.value = true;
-        try {
-          // In a real implementation, we would use the API service
-          // const response = await productService.getAllProducts();
-          // products.value = response.data || [];
-          
-          // For demo/development, we'll use mock data
-          products.value = [
-            { productId: 1, name: 'Laptop', price: 999.99, categoryId: 1, stockQuantity: 10, barcode: '123456789' },
-            { productId: 2, name: 'Smartphone', price: 499.99, categoryId: 1, stockQuantity: 15, barcode: '234567890' },
-            { productId: 3, name: 'T-Shirt', price: 19.99, categoryId: 2, stockQuantity: 50, barcode: '345678901' },
-            { productId: 4, name: 'Coffee Maker', price: 89.99, categoryId: 3, stockQuantity: 8, barcode: '456789012' },
-            { productId: 5, name: 'Novel', price: 12.99, categoryId: 4, stockQuantity: 30, barcode: '567890123' },
-            { productId: 6, name: 'Headphones', price: 149.99, categoryId: 1, stockQuantity: 20, barcode: '678901234' },
-            { productId: 7, name: 'Jeans', price: 39.99, categoryId: 2, stockQuantity: 45, barcode: '789012345' },
-            { productId: 8, name: 'Blender', price: 59.99, categoryId: 3, stockQuantity: 12, barcode: '890123456' },
-            { productId: 9, name: 'Cookbook', price: 24.99, categoryId: 4, stockQuantity: 25, barcode: '901234567' },
-            { productId: 10, name: 'Tablet', price: 299.99, categoryId: 1, stockQuantity: 7, barcode: '012345678' },
-            { productId: 11, name: 'Dress', price: 49.99, categoryId: 2, stockQuantity: 30, barcode: '123456780' },
-            { productId: 12, name: 'Toaster', price: 29.99, categoryId: 3, stockQuantity: 18, barcode: '234567801' }
-          ];
-        } catch (error) {
-          console.error('Error fetching products:', error);
-        } finally {
-          loading.value = false;
-        }
-      };
+      // In your ProductManagement.vue script section, modify the imports and fetchProducts function:
+
+// First, uncom
+// Then update your fetchProducts function
+const fetchProducts = async () => {
+  loading.value = true;
+  try {
+    // Use the real API service instead of mock data
+    const response = await productService.getAllProducts();
+    console.log('Products loaded from API:', response);
+    
+    // Map the API response to your products array
+    // The response structure might be different based on your backend
+    if (Array.isArray(response.data)) {
+      products.value = response.data;
+    } else if (typeof response.data === 'string') {
+      // If the response is a JSON string, parse it
+      try {
+        products.value = JSON.parse(response.data);
+      } catch (parseError) {
+        console.error('Error parsing products JSON:', parseError);
+        products.value = [];
+      }
+    } else {
+      products.value = [];
+    }
+    
+    // If no products are returned, log it for debugging
+    if (products.value.length === 0) {
+      console.log('No products returned from API');
+    }
+  } catch (error) {
+    console.error('Error fetching products:', error);
+    if (error.response) {
+      console.error('API error response:', error.response.data);
+    }
+    // Set products to empty array on error
+    products.value = [];
+  } finally {
+    loading.value = false;
+  }
+};
   
       const getCategoryName = (categoryId) => {
         const categories = {
@@ -427,64 +443,125 @@
         showDeleteModal.value = true;
       };
   
-      const deleteProduct = async () => {
-        if (!productToDelete.value) return;
-        
-        submitting.value = true;
-        try {
-          // In a real implementation, we would use the API service
-          // await productService.deleteProduct(productToDelete.value.productId);
-          
-          // For demo/development, we'll just update the local state
-          products.value = products.value.filter(p => p.productId !== productToDelete.value.productId);
-          showDeleteModal.value = false;
-          productToDelete.value = null;
-        } catch (error) {
-          console.error('Error deleting product:', error);
-          alert('Failed to delete product. Please try again.');
-        } finally {
-          submitting.value = false;
-        }
-      };
+// Update your deleteProduct function to properly use the API service
+
+const deleteProduct = async () => {
+  if (!productToDelete.value) return;
   
-      const submitProductForm = async () => {
-        submitting.value = true;
-        
-        try {
-          if (showEditProductModal.value) {
-            // Update existing product
-            // In a real implementation, we would use the API service
-            // const response = await productService.updateProduct(
-            //   productForm.value.productId,
-            //   productForm.value
-            // );
-            
-            // For demo/development, we'll just update the local state
-            const index = products.value.findIndex(p => p.productId === productForm.value.productId);
-            if (index !== -1) {
-              products.value[index] = { ...productForm.value };
-            }
-          } else {
-            // Create new product
-            // In a real implementation, we would use the API service
-            // const response = await productService.createProduct(productForm.value);
-            
-            // For demo/development, we'll just update the local state
-            const newProduct = { 
-              ...productForm.value,
-              productId: Math.max(0, ...products.value.map(p => p.productId)) + 1
-            };
-            products.value.push(newProduct);
-          }
-          
-          closeProductModal();
-        } catch (error) {
-          console.error('Error saving product:', error);
-          alert('Failed to save product. Please try again.');
-        } finally {
-          submitting.value = false;
+  submitting.value = true;
+  try {
+    console.log(`Attempting to delete product with ID: ${productToDelete.value.productId}`);
+    
+    // Call the API to delete the product
+    await productService.deleteProduct(productToDelete.value.productId);
+    
+    console.log('Product deleted successfully, updating UI');
+    
+    // Update the local state to remove the deleted product
+    products.value = products.value.filter(p => p.productId !== productToDelete.value.productId);
+    
+    // Close the modal and clear the selected product
+    showDeleteModal.value = false;
+    productToDelete.value = null;
+  } catch (error) {
+    console.error('Error deleting product:', error);
+    
+    // Log more detailed error information
+    if (error.response) {
+      console.error('Server responded with:', {
+        status: error.response.status,
+        data: error.response.data
+      });
+    } else if (error.request) {
+      console.error('No response received from server');
+    } else {
+      console.error('Error setting up request:', error.message);
+    }
+    
+    alert('Failed to delete product. Please try again.');
+  } finally {
+    submitting.value = false;
+  }
+};
+  
+      // Update the submitProductForm function to use the API service
+
+const submitProductForm = async () => {
+  submitting.value = true;
+  
+  try {
+    const productData = {
+      name: productForm.value.name,
+      price: parseFloat(productForm.value.price),
+      categoryId: parseInt(productForm.value.categoryId),
+      stockQuantity: parseInt(productForm.value.stockQuantity),
+      barcode: productForm.value.barcode,
+      image_url: productForm.value.imageUrl || '' // Include an image URL field if you have one
+    };
+    
+    console.log('Submitting product data:', productData);
+    
+    if (showEditProductModal.value) {
+      // Update existing product
+      const response = await productService.updateProduct(
+        productForm.value.productId,
+        productData
+      );
+      
+      console.log('Update product response:', response);
+      
+      // Update the local state
+      const index = products.value.findIndex(p => p.productId === productForm.value.productId);
+      if (index !== -1) {
+        // You might need to adapt this based on your API response structure
+        if (response.data) {
+          products.value[index] = response.data;
+        } else {
+          // If the response doesn't include the updated product, update with our local data
+          products.value[index] = { 
+            ...products.value[index],
+            ...productData,
+            productId: productForm.value.productId
+          };
         }
-      };
+      }
+    } else {
+      // Create new product
+      const response = await productService.createProduct(productData);
+      console.log('Create product response:', response);
+      
+      // Add the new product to the local state
+      // You might need to adapt this based on your API response structure
+      if (response.data) {
+        products.value.push(response.data);
+      }
+    }
+    
+    // Close the modal and reset the form
+    closeProductModal();
+    
+    // Refresh the product list to ensure we have the latest data
+    fetchProducts();
+  } catch (error) {
+    console.error('Error saving product:', error);
+    
+    // Log more detailed error information
+    if (error.response) {
+      console.error('Server responded with:', {
+        status: error.response.status,
+        data: error.response.data
+      });
+    } else if (error.request) {
+      console.error('No response received from server');
+    } else {
+      console.error('Error setting up request:', error.message);
+    }
+    
+    alert('Failed to save product. Please try again.');
+  } finally {
+    submitting.value = false;
+  }
+};
   
       const closeProductModal = () => {
         showAddProductModal.value = false;

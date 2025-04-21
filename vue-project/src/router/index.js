@@ -10,10 +10,20 @@ const EndOfDayReport = () => import('../views/EndOfDayReport.vue');
 const ProductManagement = () => import('../views/ProductManagement.vue');
 const OrdersPage = () => import('../views/OrdersPage.vue');
 const LoginView = () => import('../views/LoginView.vue');
-
+const Profile = () => import('../views/Profile.vue');
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
+    {
+      path: '/profile',
+      name: 'Profile',
+      component: Profile
+    },
+    {
+      path: '/settings',
+      name: 'Settings',
+      component: () => import('../views/Settings.vue')
+    },
     {
       path: '/login',
       name: 'login',

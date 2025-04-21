@@ -1,4 +1,4 @@
-<!-- src/views/ProfileView.vue -->
+
 <template>
     <div class="bg-white shadow-lg rounded-lg overflow-hidden">
       <div class="p-6 bg-blue-600 text-white">
