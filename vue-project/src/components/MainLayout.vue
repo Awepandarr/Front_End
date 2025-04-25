@@ -26,7 +26,7 @@
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                 </svg>
-                <span v-if="notifications.length > 0" class="absolute top-0 right-0 block h-2 w-2 rounded-full bg-red-500 ring-2 ring-white"></span>
+                <span v-if="unreadNotifications > 0" class="absolute top-0 right-0 block h-2 w-2 rounded-full bg-red-500 ring-2 ring-white"></span>
               </button>
               
               <div 
@@ -42,19 +42,51 @@
                   </div>
                   <div 
                     v-for="(notification, index) in notifications" 
-                    :key="index"
+                    :key="notification.id || index"
                     class="p-4 border-b last:border-0 hover:bg-gray-50 cursor-pointer"
+                    @click="markNotificationAsRead(notification)"
                   >
                     <div class="flex">
-                      <div class="flex-shrink-0 mr-4">
-                        <div class="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
-                          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                          </svg>
-                        </div>
-                      </div>
+<!-- Inside the notification block in MainLayout.vue -->
+<div class="flex-shrink-0 mr-4">
+  <div class="h-10 w-10 rounded-full flex items-center justify-center"
+       :class="{
+         'bg-red-100': notification.type === 'out-of-stock',
+         'bg-yellow-100': notification.type === 'low-stock',
+         'bg-green-100': notification.type === 'stock-replenished',
+         'bg-blue-100': notification.type === 'stock-update' || notification.type === 'order'
+       }">
+    <!-- Out of stock icon -->
+    <svg v-if="notification.type === 'out-of-stock'" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+    
+    <!-- Low stock icon -->
+    <svg v-else-if="notification.type === 'low-stock'" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+    </svg>
+    
+    <!-- Stock replenished icon -->
+    <svg v-else-if="notification.type === 'stock-replenished'" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+    
+    <!-- Default stock update icon -->
+    <svg v-else-if="notification.type === 'stock-update'" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
+    </svg>
+    
+    <!-- Keep your existing icons for other notification types -->
+    <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+  </div>
+</div>
                       <div>
-                        <div class="text-sm font-medium text-gray-900">{{ notification.title }}</div>
+                        <div class="flex items-center">
+                          <div class="text-sm font-medium text-gray-900">{{ notification.title }}</div>
+                          <div v-if="!notification.read" class="ml-2 w-2 h-2 bg-blue-600 rounded-full"></div>
+                        </div>
                         <div class="text-sm text-gray-500">{{ notification.message }}</div>
                         <div class="text-xs text-gray-400 mt-1">{{ notification.time }}</div>
                       </div>
@@ -62,7 +94,10 @@
                   </div>
                 </div>
                 <div class="p-2 bg-gray-50">
-                  <button class="w-full py-2 text-sm font-medium text-blue-600 hover:text-blue-800 focus:outline-none">
+                  <button 
+                    @click="markAllAsRead"
+                    class="w-full py-2 text-sm font-medium text-blue-600 hover:text-blue-800 focus:outline-none"
+                  >
                     Mark all as read
                   </button>
                 </div>
@@ -172,7 +207,17 @@
                 </svg>
                 Products
               </router-link>
-              
+              <router-link 
+                v-if="hasRole('admin')"
+                to="/stock" 
+                class="flex items-center px-4 py-2 rounded-md hover:bg-gray-700 focus:outline-none focus:bg-gray-700"
+                :class="{ 'bg-gray-700': $route.path === '/stock' }"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+                </svg>
+                Stock Management
+              </router-link>
               <router-link 
                 to="/orders" 
                 class="flex items-center px-4 py-2 rounded-md hover:bg-gray-700 focus:outline-none focus:bg-gray-700"
@@ -216,7 +261,7 @@
 </template>
   
 <script>
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuth } from '@/services/auth.service';
 
@@ -251,6 +296,7 @@ export default {
         title: 'Low Stock Alert',
         message: 'Product "Laptop" is running low on stock (2 remaining).',
         time: '5 minutes ago',
+        type: 'stock',
         read: false
       },
       {
@@ -258,9 +304,86 @@ export default {
         title: 'New Order',
         message: 'Order #1234 has been placed successfully.',
         time: '1 hour ago',
+        type: 'order',
         read: false
       }
     ]);
+    
+    // Computed property to count unread notifications
+    const unreadNotifications = computed(() => {
+      return notifications.value.filter(notification => !notification.read).length;
+    });
+    
+    // Make notifications globally accessible for other components
+    if (typeof window !== 'undefined') {
+      window.appNotifications = notifications.value;
+    }
+    
+    // Method to add a new notification
+    const addNotification = (notification) => {
+      // Create a fully formed notification object
+      const newNotification = {
+        id: Date.now(),
+        title: notification.title,
+        message: notification.message,
+        time: notification.time || new Date().toLocaleTimeString(),
+        type: notification.type || 'info',
+        read: false
+      };
+      
+      // Add to beginning of array
+      notifications.value.unshift(newNotification);
+      
+      // Limit to 50 notifications
+      if (notifications.value.length > 50) {
+        notifications.value.pop();
+      }
+      
+      // Try to save to localStorage for persistence
+      try {
+        localStorage.setItem('notifications', JSON.stringify(notifications.value));
+      } catch (error) {
+        console.error('Failed to save notifications to localStorage', error);
+      }
+      
+      return newNotification;
+    };
+    
+    // Method to mark a notification as read
+    const markNotificationAsRead = (notification) => {
+      const index = notifications.value.findIndex(n => n.id === notification.id);
+      if (index !== -1) {
+        notifications.value[index].read = true;
+        
+        // Update localStorage
+        try {
+          localStorage.setItem('notifications', JSON.stringify(notifications.value));
+        } catch (error) {
+          console.error('Failed to save notifications to localStorage', error);
+        }
+      }
+    };
+    
+    // Method to mark all notifications as read
+    const markAllAsRead = () => {
+      notifications.value.forEach(notification => {
+        notification.read = true;
+      });
+      
+      // Update localStorage
+      try {
+        localStorage.setItem('notifications', JSON.stringify(notifications.value));
+      } catch (error) {
+        console.error('Failed to save notifications to localStorage', error);
+      }
+    };
+    
+    // Listen for custom notification events from other components
+    const handleNotificationEvent = (event) => {
+      if (event.detail) {
+        addNotification(event.detail);
+      }
+    };
     
     const showNotifications = ref(false);
     const notificationDropdown = ref(null);
@@ -320,11 +443,44 @@ export default {
     onMounted(() => {
       document.addEventListener('click', handleClickOutside);
       window.addEventListener('resize', handleResize);
+      
+      // Add custom event listener for notifications
+      window.addEventListener('stock-notification', handleNotificationEvent);
+      
+      // Load saved notifications from localStorage
+      try {
+        const savedNotifications = localStorage.getItem('notifications');
+        if (savedNotifications) {
+          notifications.value = JSON.parse(savedNotifications);
+        }
+      } catch (error) {
+        console.error('Failed to load notifications from localStorage', error);
+      }
+      
+      // Expose addNotification method globally for other components
+      if (typeof window !== 'undefined') {
+        window.addStockNotification = (notificationData) => {
+  // Only set type to 'stock' if no type is provided
+  const notification = addNotification({
+    ...notificationData,
+    type: notificationData.type || 'stock'
+  });
+  
+  return notification;
+};
+      }
     });
     
     onUnmounted(() => {
       document.removeEventListener('click', handleClickOutside);
       window.removeEventListener('resize', handleResize);
+      window.removeEventListener('stock-notification', handleNotificationEvent);
+      
+      // Remove global references
+      if (typeof window !== 'undefined') {
+        delete window.addStockNotification;
+        delete window.appNotifications;
+      }
     });
     
     return {
@@ -336,9 +492,12 @@ export default {
       userDropdown,
       toggleUserMenu,
       notifications,
+      unreadNotifications,
       showNotifications,
       notificationDropdown,
       toggleNotifications,
+      markNotificationAsRead,
+      markAllAsRead,
       hasRole,
       logout
     };

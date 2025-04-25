@@ -28,22 +28,72 @@
   
       <div v-else>
         <!-- Sales Summary -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
-          <div class="bg-green-500 text-white p-8 rounded-lg shadow-lg">
-            <div class="text-lg font-semibold uppercase tracking-wide">Total Sales</div>
-            <div class="mt-4 text-4xl font-bold">${{ formatCurrency(report.total_sales) }}</div>
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
+          <div class="bg-green-500 text-white p-6 rounded-lg shadow-lg">
+            <div class="text-sm font-semibold uppercase tracking-wide">Total Sales</div>
+            <div class="mt-3 text-3xl font-bold">${{ formatCurrency(report.total_sales) }}</div>
           </div>
           
-          <div class="bg-blue-500 text-white p-8 rounded-lg shadow-lg">
-            <div class="text-lg font-semibold uppercase tracking-wide">Total Payments</div>
-            <div class="mt-4 text-4xl font-bold">${{ formatCurrency(report.total_payments) }}</div>
+          <div class="bg-blue-500 text-white p-6 rounded-lg shadow-lg">
+            <div class="text-sm font-semibold uppercase tracking-wide">Total Payments</div>
+            <div class="mt-3 text-3xl font-bold">${{ formatCurrency(report.total_payments) }}</div>
           </div>
           
-          <div class="bg-purple-500 text-white p-8 rounded-lg shadow-lg">
-            <div class="text-lg font-semibold uppercase tracking-wide">Total Discounts</div>
-            <div class="mt-4 text-4xl font-bold">${{ formatCurrency(report.total_discounts) }}</div>
+          <div class="bg-purple-500 text-white p-6 rounded-lg shadow-lg">
+            <div class="text-sm font-semibold uppercase tracking-wide">Total Discounts</div>
+            <div class="mt-3 text-3xl font-bold">${{ formatCurrency(report.total_discounts) }}</div>
+          </div>
+          
+          <div class="bg-yellow-500 text-white p-6 rounded-lg shadow-lg">
+            <div class="text-sm font-semibold uppercase tracking-wide">Net Revenue</div>
+            <div class="mt-3 text-3xl font-bold">${{ formatCurrency(report.total_sales - report.total_discounts) }}</div>
           </div>
         </div>
+  
+        <div class="mb-12">
+  <h2 class="text-2xl font-bold mb-6">Top Selling Products</h2>
+  <div class="bg-gray-100 rounded-lg shadow-lg p-8">
+    <div v-if="topProducts.length > 0">
+      <div class="overflow-hidden rounded-lg border border-gray-200">
+        <table class="min-w-full divide-y divide-gray-200">
+          <thead class="bg-gray-50">
+            <tr>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
+              <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity Sold</th>
+              <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Revenue</th>
+            </tr>
+          </thead>
+          <tbody class="bg-white divide-y divide-gray-200">
+            <tr v-for="(product, index) in topProducts" :key="index" class="hover:bg-gray-50">
+              <td class="px-6 py-4 whitespace-nowrap">
+                <div class="flex items-center">
+                  <div class="flex-shrink-0 h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
+                    <span class="font-semibold">{{ index + 1 }}</span>
+                  </div>
+                  <div class="ml-4">
+                    <div class="text-sm font-medium text-gray-900">{{ product.name }}</div>
+                    <div class="text-sm text-gray-500">ID: {{ product.product_id }}</div>
+                  </div>
+                </div>
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap text-center">
+                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                  {{ product.quantity_sold }} units
+                </span>
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                ${{ formatCurrency(product.revenue) }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div v-else class="text-xl text-gray-500 text-center py-8">
+      No product data available
+    </div>
+  </div>
+</div>
   
         <!-- Payment Breakdown -->
         <div class="mb-12">
@@ -88,7 +138,7 @@
         <!-- Action Buttons -->
         <div class="mb-6">
           <router-link 
-            to="/reports/history" 
+            to="/report/history" 
             class="flex items-center space-x-3 bg-gray-700 hover:bg-gray-800 text-white font-semibold py-3 px-6 rounded-lg shadow-md transition duration-300"
           >
             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -155,7 +205,8 @@ export default {
       total_sales: 0,
       total_payments: 0,
       total_discounts: 0,
-      payment_breakdown: ''
+      payment_breakdown: '',
+      discount_breakdown: ''
     });
     
     const loading = ref(true);
@@ -199,8 +250,54 @@ export default {
       return result;
     });
     
-    // Create the D3 chart
-    const createD3Chart = () => {
+    // New computed property for discount breakdown
+    const discountBreakdown = computed(() => {
+      console.log("Raw discount breakdown:", report.value.discount_breakdown);
+      
+      if (!report.value.discount_breakdown || 
+          report.value.discount_breakdown === 'No discount data available') {
+        console.log("No discount data available");
+        return [];
+      }
+      
+      // Parse the discount breakdown string (format: "Loyalty: 50, Promotions: 75.50")
+      const result = [];
+      const parts = report.value.discount_breakdown.split(', ');
+      
+      parts.forEach(part => {
+        console.log("Processing discount part:", part);
+        const [type, amountStr] = part.split(': ');
+        if (type && amountStr) {
+          result.push({
+            type: type.trim(),
+            amount: parseFloat(amountStr.trim())
+          });
+        }
+      });
+      
+      // If no discount breakdown is available but we have a total discount,
+      // display it as "General Discount"
+      if (result.length === 0 && report.value.total_discounts > 0) {
+        result.push({
+          type: 'General Discount',
+          amount: report.value.total_discounts
+        });
+      }
+      
+      console.log("Parsed discount breakdown:", result);
+      return result;
+    });
+    const topProducts = computed(() => {
+  return report.value.top_products || [];
+});
+    // Create the D3 charts
+    const createD3Charts = () => {
+      createPaymentChart();
+      createDiscountChart();
+    };
+    
+    // Create payment method chart
+    const createPaymentChart = () => {
       // Clear any existing chart first
       d3.select("#payment-chart").selectAll("*").remove();
       
@@ -217,6 +314,8 @@ export default {
       
       // Get the container dimensions
       const container = document.getElementById('payment-chart');
+      if (!container) return;
+      
       const width = container.clientWidth;
       const height = container.clientHeight;
       
@@ -283,7 +382,96 @@ export default {
         .style('font-weight', 'bold')
         .text(`$${d3.sum(paymentBreakdown.value, d => d.amount).toFixed(2)}`);
           
-      console.log("D3 chart created successfully");
+      console.log("D3 payment chart created successfully");
+    };
+    
+    // Create discount breakdown chart
+    const createDiscountChart = () => {
+      // Clear any existing chart first
+      d3.select("#discount-chart").selectAll("*").remove();
+      
+      // Exit if no data
+      if (discountBreakdown.value.length === 0) {
+        d3.select("#discount-chart")
+          .append("div")
+          .attr("class", "flex items-center justify-center h-full w-full")
+          .append("p")
+          .attr("class", "text-gray-500 text-lg")
+          .text("No discount data available");
+        return;
+      }
+      
+      // Get the container dimensions
+      const container = document.getElementById('discount-chart');
+      if (!container) return;
+      
+      const width = container.clientWidth;
+      const height = container.clientHeight;
+      
+      // Create SVG
+      const svg = d3.select("#discount-chart")
+        .append("svg")
+        .attr("width", width)
+        .attr("height", height)
+        .append("g")
+        .attr("transform", `translate(${width / 2}, ${height / 2})`);
+        
+      // Color scale for discounts
+      const color = d3.scaleOrdinal()
+        .domain(discountBreakdown.value.map(d => d.type))
+        .range(['#10B981', '#8B5CF6', '#F59E0B', '#EF4444', '#3B82F6']);
+      
+      // Compute position of each group on the pie
+      const pie = d3.pie()
+        .value(d => d.amount);
+      
+      const data_ready = pie(discountBreakdown.value);
+      
+      // The arc generator
+      const arc = d3.arc()
+        .innerRadius(Math.min(width, height) / 4)  // This is the size of the donut hole
+        .outerRadius(Math.min(width, height) / 2 - 10);
+      
+      // Another arc for the labels
+      const labelArc = d3.arc()
+        .innerRadius(Math.min(width, height) / 2 * 0.7)
+        .outerRadius(Math.min(width, height) / 2 * 0.7);
+      
+      // Build the pie chart
+      svg.selectAll('allSlices')
+        .data(data_ready)
+        .enter()
+        .append('path')
+        .attr('d', arc)
+        .attr('fill', d => color(d.data.type))
+        .attr("stroke", "white")
+        .style("stroke-width", "2px")
+        .style("opacity", 0.7);
+      
+      // Add labels
+      svg.selectAll('allLabels')
+        .data(data_ready)
+        .enter()
+        .append('text')
+        .text(d => {
+          const percent = ((d.data.amount / d3.sum(discountBreakdown.value, d => d.amount)) * 100).toFixed(0);
+          return `${d.data.type} (${percent}%)`;
+        })
+        .attr('transform', d => `translate(${labelArc.centroid(d)})`)
+        .style('text-anchor', 'middle')
+        .style('font-size', '12px')
+        .style('fill', 'white')
+        .style('font-weight', 'bold');
+      
+      // Add the center text
+      svg.append('text')
+        .attr('text-anchor', 'middle')
+        .attr('dominant-baseline', 'middle')
+        .style('font-size', '16px')
+        .style('font-weight', 'bold')
+        .text(`$${d3.sum(discountBreakdown.value, d => d.amount).toFixed(2)}`);
+          
+      console.log("D3 discount chart created successfully");
     };
     
     const fetchReport = async () => {
@@ -303,24 +491,25 @@ export default {
           total_sales: 1250.75,
           total_payments: 1250.75,
           total_discounts: 125.50,
-          payment_breakdown: 'Cash: 450.25, Card: 800.50'
+          payment_breakdown: 'Cash: 450.25, Card: 800.50',
+          discount_breakdown: 'Loyalty: 75.50, Promotions: 35.00, Staff: 15.00'
         };
       } finally {
         loading.value = false;
         
-        // Creating chart after loading is complete and data is ready
+        // Creating charts after loading is complete and data is ready
         nextTick(() => {
           setTimeout(() => {
-            createD3Chart();
+            createD3Charts();
           }, 100); // Small timeout to ensure DOM is ready
         });
       }
     };
     
-    // Watch for changes in payment breakdown data
-    watch(paymentBreakdown, () => {
+    // Watch for changes in breakdown data
+    watch([paymentBreakdown, discountBreakdown], () => {
       nextTick(() => {
-        createD3Chart();
+        createD3Charts();
       });
     });
     
@@ -368,7 +557,10 @@ export default {
       csvContent += `Total Payments,$${formatCurrency(report.value.total_payments)}\n`;
       
       // Add total discounts
-      csvContent += `Total Discounts,$${formatCurrency(report.value.total_discounts)}\n\n`;
+      csvContent += `Total Discounts,$${formatCurrency(report.value.total_discounts)}\n`;
+      
+      // Add net revenue
+      csvContent += `Net Revenue,$${formatCurrency(report.value.total_sales - report.value.total_discounts)}\n\n`;
       
       // Add payment breakdown
       csvContent += "Payment Method,Amount\n";
@@ -378,6 +570,16 @@ export default {
         });
       } else {
         csvContent += "No payment data available,0.00\n";
+      }
+      
+      // Add discount breakdown
+      csvContent += "\nDiscount Type,Amount\n";
+      if (discountBreakdown.value.length > 0) {
+        discountBreakdown.value.forEach(item => {
+          csvContent += `${item.type},$${formatCurrency(item.amount)}\n`;
+        });
+      } else {
+        csvContent += "No discount data available,0.00\n";
       }
       
       // Create download link and trigger download
@@ -408,7 +610,7 @@ export default {
       
       // Handle window resize
       window.addEventListener('resize', () => {
-        createD3Chart();
+        createD3Charts();
       });
     });
     
@@ -418,6 +620,7 @@ export default {
       error,
       currentDate,
       paymentBreakdown,
+      discountBreakdown,
       fetchReport,
       formatCurrency,
       getPercentage,
@@ -425,7 +628,8 @@ export default {
       printReport,
       exportReportCSV,
       exportReportPDF,
-      sendReportEmail
+      sendReportEmail,
+      topProducts
     };
   }
 };

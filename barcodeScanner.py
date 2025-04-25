@@ -1,3 +1,4 @@
+import cv2
 from flask import Flask, Response, render_template, jsonify, request
 import cv2
 from pyzbar.pyzbar import decode
@@ -10,22 +11,31 @@ import logging
 from flask_cors import CORS
 
 # Configure logging
-logging.basicConfig(level=logging.INFO, 
+logging.basicConfig(level=logging.DEBUG, 
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
 
-# Configuration (could be moved to a config file)
+# Configuration with precise positioning
 config = {
-    'java_service_url': "http://localhost:8080/product",  # Base URL for the Java web service
-    'camera_index': 1,  # Try 0 if 1 doesn't work
+    'java_service_url': "http://localhost:8080/product",
+    'camera_index': 1,
     'camera_width': 640,
     'camera_height': 480,
-    'request_timeout': 5,  # Timeout for API requests in seconds
-    'scan_delay': 2,  # Delay between barcode processing in seconds
-    'polling_delay': 0.03  # Delay in camera loop to reduce CPU usage
+    
+    # Precisely positioned rectangle
+    'scan_rect': {
+        'x': 240,     # Start 80 pixels from left
+        'y': 290,    # Start 120 pixels from top
+        'width':  1430,  # 3/4 of frame width (640 * 0.75)
+        'height': 500  # 1/2 of frame height (480 * 0.5)
+    },
+    
+    'request_timeout': 5,
+    'scan_delay': 2,
+    'polling_delay': 0.03
 }
 
 # Initialize the camera
@@ -34,10 +44,8 @@ def init_camera():
     camera.set(cv2.CAP_PROP_FRAME_WIDTH, config['camera_width'])
     camera.set(cv2.CAP_PROP_FRAME_HEIGHT, config['camera_height'])
     
-    # Check if camera opened successfully
     if not camera.isOpened():
         logger.error("Error: Could not access the camera.")
-        # Try alternative camera index
         alt_index = 0 if config['camera_index'] == 1 else 1
         logger.info(f"Trying alternative camera index: {alt_index}")
         
@@ -51,16 +59,14 @@ def init_camera():
 
 cap = init_camera()
 
-# Global variables to hold the latest frame and barcode data
+# Global variables
 output_frame = None
 frame_lock = threading.Lock()
 latest_barcode_data = None
 latest_product_info = None
 
 def fetch_product_info(barcode):
-    """
-    Fetch product information from the Java web service.
-    """
+    """Fetch product information from the Java web service."""
     global latest_product_info
     
     try:
@@ -79,19 +85,13 @@ def fetch_product_info(barcode):
             logger.error(f"Error: Could not fetch product data, status code: {response.status_code}")
             latest_product_info = None
             return None
-    except requests.exceptions.Timeout:
-        logger.error("Request to Java service timed out")
-        return None
-    except requests.exceptions.ConnectionError:
-        logger.error("Connection error to Java service")
-        return None
     except Exception as e:
         logger.error(f"Exception during web service call: {e}")
         return None
 
 def camera_loop():
     """
-    Continuously capture frames from the camera, draw a guiding rectangle,
+    Continuously capture frames, draw guiding rectangle,
     perform barcode scanning, and update the global output frame.
     """
     global output_frame, latest_barcode_data, cap
@@ -101,70 +101,82 @@ def camera_loop():
         return
         
     last_scan_time = 0
-    guiding_box_start = (100, 100)
-    guiding_box_end = (540, 380)
+    
+    # Extract rectangle configuration
+    rect = config['scan_rect']
+    guiding_box_start = (rect['x'], rect['y'])
+    guiding_box_end = (rect['x'] + rect['width'], rect['y'] + rect['height'])
+
+    # Extensive logging for diagnosis
+    logger.debug(f"Frame Size: {config['camera_width']}x{config['camera_height']}")
+    logger.debug(f"Rectangle Start: {guiding_box_start}")
+    logger.debug(f"Rectangle End: {guiding_box_end}")
+    logger.debug(f"Rectangle Size: {rect['width']}x{rect['height']}")
 
     while True:
         ret, frame = cap.read()
         if not ret:
             logger.warning("Failed to grab frame")
-            # Attempt to reinitialize the camera
             time.sleep(1)
             cap = init_camera()
             if cap is None:
-                time.sleep(5)  # Wait longer before trying again
+                time.sleep(5)
             continue
 
-        # Draw a guiding rectangle (green box) on the frame
-        cv2.rectangle(frame, guiding_box_start, guiding_box_end, (0, 255, 0), 2)
+        # Draw rectangle EXACTLY where specified
+        cv2.rectangle(frame, guiding_box_start, guiding_box_end, (0, 0, 255), 2)
 
-        # Decode barcodes in the frame
+        # Barcode scanning logic
         current_time = time.time()
         if current_time - last_scan_time > config['scan_delay']:
             try:
-                # Only scan within the guiding rectangle to improve performance
-                roi = frame[guiding_box_start[1]:guiding_box_end[1], 
-                           guiding_box_start[0]:guiding_box_end[0]]
+                # Scan only within specified rectangle
+                roi = frame[rect['y']:rect['y']+rect['height'], 
+                            rect['x']:rect['x']+rect['width']]
                 barcodes = decode(roi)
                 
                 if barcodes:
-                    # Process the first detected barcode
                     barcode = barcodes[0]
                     barcode_data = barcode.data.decode("utf-8")
                     barcode_type = barcode.type
                     
-                    # Only process if it's a new barcode or if enough time has passed
                     if latest_barcode_data is None or latest_barcode_data["data"] != barcode_data:
                         logger.info(f"Detected barcode: {barcode_data} ({barcode_type})")
                         latest_barcode_data = {"data": barcode_data, "type": barcode_type}
                         
-                        # Draw the barcode location on the image
+                        # Draw barcode polygon
                         points = barcode.polygon
                         if points:
                             hull = cv2.convexHull(
-                                numpy.array([[p.x + guiding_box_start[0], p.y + guiding_box_start[1]] for p in points])
+                                numpy.array([[p.x + rect['x'], p.y + rect['y']] for p in points])
                             )
                             cv2.polylines(frame, [hull], True, (0, 255, 0), 2)
-                            
-                        # Add the barcode data to the image
+                        
+                        # Add barcode text
                         cv2.putText(
-                            frame, barcode_data, (guiding_box_start[0], guiding_box_start[1] - 10),
+                            frame, barcode_data, 
+                            (rect['x'], rect['y'] - 10),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2
                         )
                         
-                        # Fetch product info in a separate thread to avoid blocking
                         threading.Thread(target=fetch_product_info, args=(barcode_data,)).start()
                         
                         last_scan_time = current_time
             except Exception as e:
-                logger.error(f"Error during barcode processing: {e}")
+                logger.error(f"Barcode processing error: {e}")
 
-        # Update the global output_frame with the processed frame
+        # Update global frame
         with frame_lock:
             output_frame = frame.copy()
 
-        # Optional: a small delay to reduce CPU usage
         time.sleep(config['polling_delay'])
+
+# Rest of the Flask app remains the same...
+
+# Rest of the code remains the same as in the previous script...
+
+# Rest of the code remains the same as in the previous script...
+
 
 # Start the camera loop in a separate daemon thread
 if cap is not None:

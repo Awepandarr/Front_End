@@ -11,6 +11,8 @@ const ProductManagement = () => import('../views/ProductManagement.vue');
 const OrdersPage = () => import('../views/OrdersPage.vue');
 const LoginView = () => import('../views/LoginView.vue');
 const Profile = () => import('../views/Profile.vue');
+const OrderDetails = () => import('../views/OrderDetails.vue');
+const History=()=>import('../views/EndOfDayReportHistory.vue');
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
@@ -20,10 +22,29 @@ const router = createRouter({
       component: Profile
     },
     {
+      path: '/stock',
+      name: 'StockManagement',
+      component: () => import(/* webpackChunkName: "stock" */ '../views/StockManagerView.vue'),
+      meta: { requiresAuth: true, roles: ['admin'] }
+    },
+    {
       path: '/settings',
       name: 'Settings',
       component: () => import('../views/Settings.vue')
     },
+    {
+      path:'/report/history',
+      name:'History',
+      component:History,
+    },
+
+// Then make sure you have this route defined in your routes array
+{
+  path: '/orders/:id',
+  name: 'OrderDetails',
+  component: OrderDetails,
+  meta: { title: 'Order Details', requiresAuth: true }
+},
     {
       path: '/login',
       name: 'login',

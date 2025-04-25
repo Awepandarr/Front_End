@@ -272,7 +272,6 @@
             </div>
           </div>
         </div>
-
         <!-- Right Panel: Current Order and Actions -->
         <div class="w-full md:w-1/3">
           <!-- Current Order -->
@@ -295,6 +294,15 @@
                 Clear All
               </button>
             </div>
+            <div class="mb-6">
+              <customer-selector :initialCustomerId="customerId" @select-customer="setCustomer"/>
+            </div>
+            <loyalty-points-redeemer
+      :customer="selectedCustomer"
+      :orderItems="cart"
+      :pointsValue="0.01"
+      @apply-discount="applyLoyaltyDiscount"
+    />
 
             <!-- Cart Items Section -->
             <div class="max-h-[calc(100vh-500px)] overflow-y-auto mb-6 pr-1">
@@ -372,7 +380,7 @@
                 <span class="font-medium">${{ subtotal.toFixed(2) }}</span>
               </div>
               <div class="flex justify-between mb-3 text-lg">
-                <span class="text-gray-600">Tax (10%)</span>
+                <span class="text-gray-600">Tax (20%)</span>
                 <span class="font-medium">${{ tax.toFixed(2) }}</span>
               </div>
               <div class="flex justify-between mb-3 text-lg">
@@ -443,6 +451,154 @@
           </div>
         </div>
       </div>
+<div class="bg-white rounded-xl shadow-lg overflow-hidden mb-8 border border-gray-100">
+      <div class="p-4 bg-gradient-to-r from-blue-600 to-blue-800 text-white">
+        <h3 class="text-lg font-semibold flex items-center gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+          </svg>
+          Cash Drawer
+        </h3>
+      </div>
+  <div class="p-6">
+    <div class="grid grid-cols-2 gap-4 mb-6">
+      <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+        <p class="text-sm text-gray-500 mb-1">Starting Amount</p>
+        <p class="text-xl font-bold">£{{ cashDrawer.startingAmount.toFixed(2) }}</p>
+      </div>
+      <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+        <p class="text-sm text-gray-500 mb-1">Current Amount</p>
+        <p class="text-xl font-bold">£{{ cashDrawer.currentAmount.toFixed(2) }}</p>
+      </div>
+    </div>
+    
+    <div class="flex gap-3">
+      <button 
+        @click="openCashDrawerModal('open')" 
+        class="flex-1 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition shadow-md flex items-center justify-center gap-2"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+        </svg>
+        Open Drawer
+      </button>
+      <button 
+        @click="openCashDrawerModal('add')" 
+        class="flex-1 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition shadow-md flex items-center justify-center gap-2"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+        </svg>
+        Add Cash
+      </button>
+      <button 
+        @click="openCashDrawerModal('remove')" 
+        class="flex-1 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition shadow-md flex items-center justify-center gap-2"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4" />
+        </svg>
+        Remove Cash
+      </button>
+    </div>
+  </div>
+  
+  <!-- Transaction History -->
+  <div class="px-6 pb-6">
+    <div class="mt-6 border-t border-gray-100 pt-4">
+      <h4 class="font-medium text-sm text-gray-500 mb-3 flex items-center gap-2">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        Recent Transactions
+      </h4>
+      
+      <div v-if="cashDrawer.transactions.length === 0" class="text-center py-4 text-gray-500 bg-gray-50 rounded-lg">
+        <p>No recent transactions</p>
+      </div>
+      
+      <div v-else class="max-h-60 overflow-y-auto rounded-lg border border-gray-200 divide-y divide-gray-100 bg-white shadow-sm">
+        <div 
+          v-for="(transaction, index) in cashDrawer.transactions.slice().reverse().slice(0, 5)"
+          :key="index"
+          class="p-3 flex justify-between items-center hover:bg-gray-50 transition"
+          :class="{'bg-green-50': transaction.type === 'ADD', 'bg-red-50': transaction.type === 'REMOVE'}"
+        >
+          <div>
+            <span 
+              class="font-medium rounded-full px-2 py-1 text-xs"
+              :class="{'bg-green-100 text-green-800': transaction.type === 'ADD', 'bg-red-100 text-red-800': transaction.type === 'REMOVE'}"
+            >
+              {{ transaction.type === 'ADD' ? 'ADDED' : 'REMOVED' }}
+            </span>
+            <p class="text-sm text-gray-500 mt-1">{{ new Date(transaction.timestamp).toLocaleTimeString() }}</p>
+          </div>
+          <span 
+            class="font-bold text-lg"
+            :class="{'text-green-600': transaction.type === 'ADD', 'text-red-600': transaction.type === 'REMOVE'}"
+          >
+            {{ transaction.type === 'ADD' ? '+' : '-' }}£{{ transaction.amount.toFixed(2) }}
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Cash Drawer Modal -->
+<div 
+  v-if="showCashDrawerModal" 
+  class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+>
+  <div class="bg-white rounded-xl shadow-2xl w-full max-w-md mx-4 p-6">
+    <div class="flex justify-between items-center mb-6">
+      <h2 class="text-xl font-bold text-gray-800">
+        {{ cashDrawerModalTitle }}
+      </h2>
+      <button 
+        @click="closeCashDrawerModal" 
+        class="text-gray-500 hover:text-gray-700 transition"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
+
+    <div class="mb-6">
+      <label for="cashAmount" class="block text-sm font-medium text-gray-700 mb-2">
+        Amount
+      </label>
+      <div class="relative">
+        <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500">£</span>
+        <input 
+          id="cashAmount"
+          type="number" 
+          v-model.number="cashAmount"
+          min="0"
+          step="0.01"
+          placeholder="Enter amount"
+          class="w-full pl-7 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-lg"
+        />
+      </div>
+    </div>
+
+    <div class="flex gap-4">
+      <button 
+        @click="processCashDrawerAction"
+        class="flex-1 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition shadow-md text-lg"
+      >
+        Confirm
+      </button>
+      <button 
+        @click="closeCashDrawerModal"
+        class="flex-1 py-3 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition shadow-md text-lg"
+      >
+        Cancel
+      </button>
+    </div>
+  </div>
+</div>
       
       <!-- Card Payment Modal -->
       <div v-if="showCardPaymentModal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 backdrop-blur-sm">
@@ -649,6 +805,12 @@
                 </svg>
                 Order Complete
               </h3>
+              <div class="grid grid-cols-2 gap-2 text-sm">
+  <!-- Existing fields -->
+  <span class="font-semibold text-gray-700">Customer:</span>
+  <span class="text-right">{{ selectedCustomer ? selectedCustomer.customerName : 'Guest Customer' }}</span>
+  <!-- Other fields -->
+</div>
               <button @click="closeOrderConfirmation" class="text-white hover:text-gray-200 transition">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -695,7 +857,7 @@
                 
                 <!-- Item Price -->
                 <div class="text-right">
-                  <div class="text-sm font-semibold text-gray-800"> £{{ (item.price * item.quantity).toFixed(2) }}</div>
+                  <div class="text-sm font-semibold text-gray-800">{{ (item.price * item.quantity).toFixed(2) }}</div>
                   <div class="text-xs text-gray-500">£{{ item.price.toFixed(2) }} each</div>
                 </div>
               </div>
@@ -764,7 +926,11 @@ import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
 import { productService, orderService, paymentService } from '@/services/api.service';
 import axios from 'axios';
-
+import CustomerSelector from '../components/CustomerSelector.vue';
+import LoyaltyPointsRedeemer from '../components/EnhancedLoyaltyPointsReedemer.vue';
+import {stockService} from '../services/stock.service.js';
+import {customerService} from '../services/api.service';
+import { calculatePointsEarned } from '@/services/LoyaltyPointsManager';
 // Create a dedicated API client for barcode scanner service
 const barcodeApiClient = axios.create({
   baseURL: 'http://localhost:5173', // This will use the proxy if configured properly
@@ -773,19 +939,60 @@ const barcodeApiClient = axios.create({
   },
   timeout: 10000
 });
-// Add this method to the methods section of your component
 
-// Handle image loading errors
-const handleImageError = (event, product) => {
-  console.warn(`Failed to load image for product: ${product.name}`);
-  // Replace with transparent pixel to prevent continuous error attempts
-  event.target.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
-  // Flag as no image available
-  product.image_url = null;
-};
 
 export default {
+  components: {
+    CustomerSelector,
+    LoyaltyPointsRedeemer,
+  },
   setup() {
+    const POINTS_PER_TEN_POUNDS = 1; // 1 point for every £10 spent
+const POINTS_VALUE = 0.01;
+
+// Add this function to your setup() in POSDashboard.vue
+const reduceStockAfterPurchase = async (orderItems) => {
+  try {
+    // For each item in the cart, reduce the stock
+    for (const item of orderItems) {
+      // Calculate the quantity to reduce
+      const productId = item.productId;
+      const quantityToReduce = item.quantity;
+      
+      // Get current product stock
+      const product = products.value.find(p => p.productId === productId);
+      
+      if (product) {
+        // Calculate new stock level
+        const newStockQuantity = Math.max(0, product.stockQuantity - quantityToReduce);
+        
+        // Update the stock in the database
+        await stockService.updateStock(productId, newStockQuantity);
+        
+        console.log(`Stock reduced for product ${product.name}: ${product.stockQuantity} → ${newStockQuantity}`);
+      }
+    }
+    
+    // Refresh product list to reflect new stock levels
+    await fetchProducts();
+  } catch (error) {
+    console.error('Error reducing stock after purchase:', error);
+  }
+};
+    const customerId = ref(null);
+    const selectedCustomer = ref(null);
+const setCustomer = (customer) => {
+      selectedCustomer.value = customer;
+      customerId.value = customer ? customer.customerId : null;
+      
+      // Save to localStorage
+      if (customer) {
+        localStorage.setItem('selectedCustomerId', customer.customerId);
+      } else {
+        localStorage.removeItem('selectedCustomerId');
+      }
+    };
+    
     const router = useRouter();
     const cart = ref([]);
     const products = ref([]);
@@ -798,9 +1005,26 @@ export default {
     ]);
     const activeCategory = ref('all');
     const searchQuery = ref('');
-    const taxRate = 0.10; // 10% tax
+    const taxRate = 0.20; 
     const discountAmount = ref(0);
-    
+
+const applyLoyaltyDiscount = (discountData) => {
+  // Update discount amount
+  discountAmount.value = discountData.discountAmount;
+  
+  // If applying to specific items, you might want to adjust cart
+  if (discountData.applyTo === 'item') {
+    discountData.selectedItems.forEach(item => {
+      // Logic to apply discount to specific cart items
+    });
+  }
+};
+
+const updateCustomerPoints = (updatedCustomer) => {
+  // Update the selected customer's points
+  selectedCustomer.value = updatedCustomer;
+};
+
     // Barcode scanner state
     const scannerConnected = ref(false);
     const lastScannedBarcode = ref(null);
@@ -810,7 +1034,6 @@ export default {
     const inputFocused = ref(false);
     const recentScans = ref([]);
     const barcodeInput = ref(null);
-    
     // Card payment state
     const showCardPaymentModal = ref(false);
     const processingPayment = ref(false);
@@ -1053,20 +1276,33 @@ export default {
     });
 
     const addToCart = (product) => {
-      const existingItem = cart.value.find(item => item.productId === product.productId);
-      
-      if (existingItem) {
-        existingItem.quantity += 1;
-      } else {
-        cart.value.push({
-          ...product,
-          quantity: 1
-        });
-      }
-      
-      // Save cart to localStorage
-      localStorage.setItem('cart', JSON.stringify(cart.value));
-    };
+  const existingItem = cart.value.find(item => item.productId === product.productId);
+  
+  if (existingItem) {
+    // Check if we can increment quantity based on available stock
+    if (existingItem.quantity < product.stockQuantity) {
+      existingItem.quantity += 1;
+    } else {
+      // Alert the user that there's not enough stock
+      alert(`Sorry, only ${product.stockQuantity} units of ${product.name} are available.`);
+      return; // Stop execution if stock limit reached
+    }
+  } else {
+    // Check if the product has any stock before adding
+    if (product.stockQuantity > 0) {
+      cart.value.push({
+        ...product,
+        quantity: 1
+      });
+    } else {
+      alert(`Sorry, ${product.name} is out of stock.`);
+      return; // Stop execution if no stock
+    }
+  }
+  
+  // Save cart to localStorage
+  localStorage.setItem('cart', JSON.stringify(cart.value));
+};
 
     const removeFromCart = (index) => {
       cart.value.splice(index, 1);
@@ -1074,9 +1310,18 @@ export default {
     };
 
     const incrementQuantity = (index) => {
-      cart.value[index].quantity += 1;
-      localStorage.setItem('cart', JSON.stringify(cart.value));
-    };
+  const item = cart.value[index];
+  const product = products.value.find(p => p.productId === item.productId);
+  
+  if (product && item.quantity < product.stockQuantity) {
+    item.quantity += 1;
+  } else {
+    alert(`Sorry, only ${product ? product.stockQuantity : 0} units of ${item.name} are available.`);
+    return;
+  }
+  
+  localStorage.setItem('cart', JSON.stringify(cart.value));
+};
 
     const decrementQuantity = (index) => {
       if (cart.value[index].quantity > 1) {
@@ -1089,6 +1334,7 @@ export default {
 
     const clearCart = () => {
       cart.value = [];
+      discountAmount.value = 0; // Reset discount
       localStorage.removeItem('cart');
     };
 
@@ -1097,100 +1343,293 @@ export default {
     });
 
     const tax = computed(() => {
-      return subtotal.value * taxRate;
-    });
+  return subtotal.value * taxRate;
+});
 
-    const discount = computed(() => {
-      return discountAmount.value;
-    });
-
+const discount = computed(() => {
+  return discountAmount.value; // Use the loyalty discount
+});
     const total = computed(() => {
       return subtotal.value + tax.value - discount.value;
     });
 
     // Process payment - Updated version that shows order confirmation
-    const processPayment = async (paymentMethod) => {
-  if (cart.value.length === 0) return;
+  const cashDrawer = ref({
+  startingAmount: 100, // Starting float
+  currentAmount: 100,
+  transactions: []
+});
+// Add these variables to your setup() function
+const showCashDrawerModal = ref(false);
+const cashDrawerModalTitle = ref('');
+const cashAmount = ref(0);
+const cashDrawerAction = ref('');
 
+// Add these methods to your setup() function
+const openCashDrawerModal = (action) => {
+  cashDrawerAction.value = action;
+  cashAmount.value = 0;
+  
+  switch(action) {
+    case 'open':
+      cashDrawerModalTitle.value = 'Open Cash Drawer';
+      break;
+    case 'add':
+      cashDrawerModalTitle.value = 'Add Cash to Drawer';
+      break;
+    case 'remove':
+      cashDrawerModalTitle.value = 'Remove Cash from Drawer';
+      break;
+  }
+  
+  showCashDrawerModal.value = true;
+};
+
+const closeCashDrawerModal = () => {
+  showCashDrawerModal.value = false;
+};
+
+const processCashDrawerAction = () => {
+  const amount = parseFloat(cashAmount.value);
+  
+  if (isNaN(amount) || amount <= 0) {
+    alert('Please enter a valid amount');
+    return;
+  }
+  
+  switch(cashDrawerAction.value) {
+    case 'open':
+      // Just physically open the drawer in a real implementation
+      alert('Cash drawer opened');
+      break;
+    case 'add':
+      addCashToDrawer(amount);
+      break;
+    case 'remove':
+      removeCashFromDrawer(amount);
+      break;
+  }
+  
+  // Save to localStorage for persistence
+  localStorage.setItem('cashDrawer', JSON.stringify(cashDrawer.value));
+  
+  // Close modal
+  closeCashDrawerModal();
+};
+
+const openCashDrawer = () => {
+  // In a real system, this would trigger the physical cash drawer
+  console.log('Cash drawer opened');
+  alert('Cash drawer opened');
+};
+
+const addCashToDrawer = (amount) => {
+  if (!amount) return;
+  const parsedAmount = parseFloat(amount);
+  if (isNaN(parsedAmount) || parsedAmount <= 0) {
+    alert('Please enter a valid amount');
+    return;
+  }
+  
+  cashDrawer.value.currentAmount += parsedAmount;
+  cashDrawer.value.transactions.push({
+    type: 'ADD',
+    amount: parsedAmount,
+    timestamp: new Date()
+  });
+  
+  alert(`£${parsedAmount.toFixed(2)} added to cash drawer`);
+};
+
+const removeCashFromDrawer = (amount) => {
+  if (!amount) return;
+  const parsedAmount = parseFloat(amount);
+  if (isNaN(parsedAmount) || parsedAmount <= 0) {
+    alert('Please enter a valid amount');
+    return;
+  }
+  
+  if (parsedAmount > cashDrawer.value.currentAmount) {
+    alert(`Not enough cash in drawer. Current amount: £${cashDrawer.value.currentAmount.toFixed(2)}`);
+    return false;
+  }
+  
+  cashDrawer.value.currentAmount -= parsedAmount;
+  cashDrawer.value.transactions.push({
+    type: 'REMOVE',
+    amount: parsedAmount,
+    timestamp: new Date()
+  });
+  
+  alert(`£${parsedAmount.toFixed(2)} removed from cash drawer`);
+  return true;
+};
+
+// 2. Update the processPayment method to handle cash drawer operations
+// Replace the current processPayment method with this updated version:
+const validateStockForCart = () => {
+  const invalidItems = [];
+  
+  for (const cartItem of cart.value) {
+    // Find the current product to get latest stock
+    const product = products.value.find(p => p.productId === cartItem.productId);
+    
+    if (!product || cartItem.quantity > product.stockQuantity) {
+      invalidItems.push({
+        name: cartItem.name,
+        requestedQuantity: cartItem.quantity,
+        availableQuantity: product ? product.stockQuantity : 0
+      });
+    }
+  }
+  
+  return invalidItems;
+};
+const processPayment = async (paymentMethod) => {
+  if (cart.value.length === 0) return;
+  const stockValidation = validateStockForCart();
+  if (stockValidation.length > 0) {
+    // Format error message showing each item with insufficient stock
+    let errorMessage = "Not enough stock available for the following items:\n\n";
+    stockValidation.forEach(item => {
+      errorMessage += `- ${item.name}: Requested: ${item.requestedQuantity}, Available: ${item.availableQuantity}\n`;
+    });
+    errorMessage += "\nPlease adjust your cart before proceeding.";
+    
+    alert(errorMessage);
+    return; // Stop payment processing
+  }
+  if (!customerId.value && !confirm('No customer is selected. Continue as guest?')) {
+    return;
+  }
   // Handle card payment separately
   if (paymentMethod === 'CARD') {
     showCardPaymentModal.value = true;
     return;
   }
 
-  try {
-    processingPayment.value = true;
-    
-    // Prepare order items in the exact working format
-    const orderItems = cart.value.map(item => ({
-      productId: Number(item.productId),
-      quantity: Number(item.quantity),
-      price: Number(item.price),
-      subtotal: Number(item.price * item.quantity)
-    }));
+  // Handle cash payment
+  if (paymentMethod === 'CASH') {
+    try {
+      processingPayment.value = true;
+      
+      // Prepare order data
+      const orderData = {
+        customerId: customerId.value, // Default customer for walk-ins
+        totalAmount: Number(subtotal.value),
+        taxAmount: Number(tax.value),
+        discountAmount: Number(discount.value || 0),
+        finalAmount: Number(total.value),
+        orderType: "In-Store",
+        paymentStatus: "PENDING",
+        deliveryType: "",
+        orderItems: cart.value.map(item => ({
+          productId: Number(item.productId),
+          quantity: Number(item.quantity),
+          price: Number(item.price),
+          subtotal: Number(item.price * item.quantity)
+        }))
+      };
 
+      // Create order
+      const orderResponse = await orderService.createOrder(orderData);
+      const order = orderResponse.data;
 
-    // Create order data matching the working Postman example
-    const orderData = {
-      customerId: 1,
-      totalAmount: Number(subtotal.value),
-      taxAmount: Number(tax.value),
-      finalAmount: Number(total.value),
-      discountAmount: Number(discount.value || 0),
-      orderType: "In-Store",
-      paymentStatus: "PENDING",
-      deliveryType: "",
-      orderItems: orderItems
-    };
+      // Process cash payment
+      const paymentData = {
+        transactionId: generateTransactionId(),
+        orderId: order.orderId,
+        amount: Number(total.value),
+        paymentMethod: "CASH",
+        paymentType: "CASH"
+      };
 
-    console.log("Submitting order:", JSON.stringify(orderData, null, 2));
+      await paymentService.processPayment(paymentData);
 
-    // Create order
-    const orderResponse = await orderService.createOrder(orderData);
-    const order = orderResponse.data;
+      // Show cash payment dialog
+      const cashReceived = prompt(`Order Total: £${total.value.toFixed(2)}\n\nEnter amount received:`);
+      
+      if (cashReceived === null) {
+        // User cancelled
+        return;
+      }
+      
+      const cashAmount = parseFloat(cashReceived);
+      
+      if (isNaN(cashAmount)) {
+        alert('Please enter a valid number');
+        return;
+      }
+      
+      if (cashAmount < total.value) {
+        alert(`Amount received (£${cashAmount.toFixed(2)}) is less than total (£${total.value.toFixed(2)}). Please collect the correct amount.`);
+        return;
+      }
+      
+      // Calculate change
+      const change = cashAmount - total.value;
+      
+      // Open cash drawer
+      openCashDrawer();
+      
+      // Add the received amount to the cash drawer
+      addCashToDrawer(total.value);
+      
+      // If there's change, remove it from the drawer
+      if (change > 0) {
+        removeCashFromDrawer(change);
+      }
+      await reduceStockAfterPurchase(cart.value);
+      // Complete the order
+      completedOrder.value = {
+        customerName: selectedCustomer.value ? selectedCustomer.value.customerName : 'Guest Customer',
+        customerId: customerId.value || 1,
+        orderId: order.orderId,
+        paymentMethod: 'Cash',
+        total: total.value,
+        cashReceived: cashAmount,
+        changeGiven: change,
+        items: [...cart.value]
+      };
+ 
+      // Show confirmation
+      showOrderConfirmation.value = true;
+      const pointsEarned = calculatePointsEarned(total.value);
 
-    // Process payment
-    const paymentData = {
-      transactionId: generateTransactionId(),
-      orderId: order.orderId,
-      amount: Number(total.value),
-      paymentMethod: paymentMethod,
-      paymentType: paymentMethod === 'CARD' ? 'CARD' : 'CASH'
-    };
+      if (selectedCustomer.value && pointsEarned > 0) {
+        try {
+          await customerService.addLoyaltyPoints(selectedCustomer.value.customerId, pointsEarned);
+          
+          // Optional: Show a notification about points earned
+          alert(`You've earned ${pointsEarned} loyalty points!`);
+        } catch (error) {
+          console.error('Error adding loyalty points:', error);
+        }
+      }
 
-    await paymentService.processPayment(paymentData);
-
-    completedOrder.value = {
-      orderId: order.orderId,
-      paymentMethod: paymentMethod === 'CARD' ? 'Credit Card' : 'Cash',
-      total: total.value,
-      items: [...cart.value]
-    };
-    
-    clearCart();
-    showOrderConfirmation.value = true;
-    
-  } catch (error) {
-    console.error('Payment error:', {
-      message: error.message,
-      response: error.response?.data,
-      request: error.config?.data
-    });
-    
-    let errorMessage = 'There was an error processing your payment.';
-    if (error.response?.data?.error) {
-      errorMessage += `\n\nError: ${error.response.data.error}`;
-    } else if (error.message) {
-      errorMessage += `\n\n${error.message}`;
+      clearCart();
+    } catch (error) {
+      console.error('Payment error:', error);
+      alert('There was an error processing your payment. Please try again.');
+    } finally {
+      processingPayment.value = false;
     }
-    
-    alert(errorMessage);
-  } finally {
-    processingPayment.value = false;
   }
 };
 
 const submitCardPayment = async () => {
+  const stockValidation = validateStockForCart();
+  if (stockValidation.length > 0) {
+    let errorMessage = "Not enough stock available for the following items:\n\n";
+    stockValidation.forEach(item => {
+      errorMessage += `- ${item.name}: Requested: ${item.requestedQuantity}, Available: ${item.availableQuantity}\n`;
+    });
+    errorMessage += "\nPlease adjust your cart before proceeding.";
+    
+    alert(errorMessage);
+    processingPayment.value = false;
+    return; // Stop payment processing
+  }
   processingPayment.value = true;
   
   try {
@@ -1256,7 +1695,7 @@ const submitCardPayment = async () => {
 
     console.log('Processing payment:', JSON.stringify(paymentData, null, 2));
     await paymentService.processPayment(paymentData);
-
+    await reduceStockAfterPurchase(cart.value);
     // Update UI state
     completedOrder.value = {
       orderId: order.orderId,
@@ -1269,6 +1708,18 @@ const submitCardPayment = async () => {
     showCardPaymentModal.value = false;
     cardDetails.value = { number: '', expiry: '', cvv: '', name: '' };
     showOrderConfirmation.value = true;
+    const pointsEarned = calculatePointsEarned(total.value);
+
+if (selectedCustomer.value && pointsEarned > 0) {
+  try {
+    await customerService.addLoyaltyPoints(selectedCustomer.value.customerId, pointsEarned);
+    
+    // Optional: Show a notification about points earned
+    alert(`You've earned ${pointsEarned} loyalty points!`);
+  } catch (error) {
+    console.error('Error adding loyalty points:', error);
+  }
+}
     clearCart();
     
   } catch (error) {
@@ -1298,6 +1749,7 @@ const submitCardPayment = async () => {
     // Close the order confirmation modal and reset for a new order
     const closeOrderConfirmation = () => {
       showOrderConfirmation.value = false;
+      discountAmount.value = 0;
       // Reset any other order-related state if needed
     };
 
@@ -1324,7 +1776,7 @@ const printReceipt = () => {
   
   // Calculate totals
   const itemsSubtotal = completedOrder.value.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-  const taxAmount = itemsSubtotal * 0.20; // 20% VAT
+  const taxAmount = itemsSubtotal * taxRate; // 20% VAT
   const totalAmount = completedOrder.value.total;
   
   // Write the receipt HTML
@@ -1428,6 +1880,7 @@ const printReceipt = () => {
         </div>
         
         <div class="receipt-details">
+          <div><span class="order-id">Customer:</span> ${completedOrder.value.customerName || 'Guest Customer'}</div>
           <div><span class="order-id">Order #:</span> ${completedOrder.value.orderId}</div>
           <div><span class="order-id">Date:</span> ${dateStr}</div>
           <div><span class="order-id">Time:</span> ${timeStr}</div>
@@ -1453,10 +1906,14 @@ const printReceipt = () => {
             <span>Subtotal:</span>
             <span>£${itemsSubtotal.toFixed(2)}</span>
           </div>
-          <div class="total-row">
-            <span>VAT (20%):</span>
-            <span>£${taxAmount.toFixed(2)}</span>
+                    <div class="total-row">
+            <span>Discount:</span>
+            <span>£${discountAmount.value}</span>
           </div>
+<div class="total-row">
+  <span>VAT (${(taxRate * 100).toFixed(0)}%):</span>
+  <span>£${taxAmount.toFixed(2)}</span>
+</div>
           <div class="total-row grand-total">
             <span>TOTAL:</span>
             <span>£${totalAmount.toFixed(2)}</span>
@@ -1561,11 +2018,17 @@ const emailReceipt = async () => {
     };
 
     const cancelOrder = () => {
-      if (cart.value.length === 0) return;
-      if (confirm('Are you sure you want to cancel this order?')) {
-        clearCart();
-      }
-    };
+  if (cart.value.length === 0) return;
+  if (confirm('Are you sure you want to cancel this order?')) {
+    clearCart();
+    discountAmount.value = 0;
+    
+    // Also clear customer selection
+    customerId.value = null;
+    selectedCustomer.value = null;
+    localStorage.removeItem('selectedCustomerId');
+  }
+};
 
     onMounted(() => {
       fetchProducts();
@@ -1580,7 +2043,14 @@ const emailReceipt = async () => {
           localStorage.removeItem('cart');
         }
       }
-      
+      const savedCustomerId = localStorage.getItem('selectedCustomerId');
+if (savedCustomerId) {
+  try {
+    customerId.value = parseInt(savedCustomerId);
+  } catch (err) {
+    console.error('Error parsing saved customerId:', err);
+  }
+}
       // Load recent scans from localStorage if available
       const savedScans = localStorage.getItem('recentScans');
       if (savedScans) {
@@ -1607,6 +2077,9 @@ const emailReceipt = async () => {
     });
 
     return {
+      customerId,
+  selectedCustomer,
+  setCustomer,
       // POS state
       products,
       categories,
@@ -1633,7 +2106,7 @@ const emailReceipt = async () => {
       // Order confirmation state
       showOrderConfirmation,
       completedOrder,
-      
+      reduceStockAfterPurchase,
       // Barcode methods
       handleVideoError,
       connectScanner,
@@ -1666,7 +2139,18 @@ const emailReceipt = async () => {
       total,
       processPayment,
       holdOrder,
-      cancelOrder
+      cancelOrder,
+      cashDrawer,
+  openCashDrawer,
+  addCashToDrawer,
+  removeCashFromDrawer,
+  showCashDrawerModal,
+  cashDrawerModalTitle,
+  cashAmount,
+  openCashDrawerModal,
+  closeCashDrawerModal,
+  processCashDrawerAction,
+  applyLoyaltyDiscount
     };
   }
 };

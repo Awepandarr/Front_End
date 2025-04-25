@@ -111,7 +111,57 @@ deleteCustomer(id) {
       
       throw error; // Re-throw to handle in the component
     });
+},
+getLoyaltyPoints(customerId) {
+  return apiClient.get(`/api/loyalty-points/${customerId}`);
+},
+
+// Add loyalty points to a customer
+addLoyaltyPoints(customerId, pointsToAdd) {
+  return apiClient.post(`/api/loyalty-points/${customerId}/add`, {
+    pointsToAdd: pointsToAdd
+  });
+},
+
+// Redeem loyalty points
+redeemLoyaltyPoints(redemptionData) {
+  const { customerId, pointsRedeemed } = redemptionData;
+  return apiClient.post(`/api/loyalty-points/${customerId}/redeem`, {
+    pointsToRedeem: pointsRedeemed
+  });
 }
+};
+export const stockService = {
+  // Get stock for a specific product
+  getStock(productId) {
+    return apiClient.get(`/api/stock/${productId}`);
+  },
+  
+  // Update stock quantity
+  updateStock(productId, stockQuantity) {
+    return apiClient.put(`/api/stock/${productId}`, {
+      stockQuantity: stockQuantity
+    });
+  },
+  
+  // Adjust stock (increment or decrement)
+  adjustStock(productId, adjustment) {
+    return apiClient.post(`/api/stock/${productId}/adjust`, {
+      adjustment: adjustment
+    });
+  },
+  
+  // Get low stock items
+  getLowStockItems(threshold = 10) {
+    return apiClient.get(`/api/stock/low-stock?threshold=${threshold}`);
+  },
+  
+  // Batch update stock
+  batchUpdateStock(products) {
+    return apiClient.post('/api/stock/batch-update', {
+      products: products
+    });
+  }
 };
 // Add these methods to your existing reportService in services/api.service.js
 
@@ -125,8 +175,8 @@ export const reportService = {
   },
   
   // Get reports within a date range
-  getReportHistory(startDate, endDate) {
-    return apiClient.get(`/endOfDayReport/history?startDate=${startDate}&endDate=${endDate}`);
+  getReportHistory() {
+    return apiClient.get('/endOfDayReport/history');
   },
   
   // Get a report for a specific date
@@ -277,7 +327,5 @@ export default {
   paymentService,
   reportService,
   invoiceService,
-  apiClient,
-  paymentService
-
-};
+  stockService
+}
